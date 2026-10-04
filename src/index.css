@@ -391,3 +391,131 @@ button.obra { cursor: pointer; }
 .pedido .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .pedido.atrasado { border-color: var(--bad); background: var(--bad-bg); }
 .pedido .mover { display: grid; gap: 8px; margin-top: 4px; }
+
+/* Planejamento (Last Planner): menu interno, EAP e calendário */
+.tabs.menu-plan { overflow-x: auto; }
+.tabs.menu-plan button { flex: 1 0 auto; padding: 0 14px; white-space: nowrap; }
+.eap-barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-3); }
+.eap-check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; }
+.eap-check input { width: 22px; height: 22px; }
+.eap-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.eap-linha { background: var(--surface); border: 2px solid var(--ink); border-left-width: 8px; padding: 12px 14px; display: grid; gap: 6px; }
+.eap-linha.n1 { margin-left: 14px; }
+.eap-linha.n2 { margin-left: 28px; }
+.eap-linha.n3 { margin-left: 42px; }
+.eap-linha.n0 { border-left-color: var(--brand); }
+.eap-linha.arquivada { opacity: .6; border-style: dashed; }
+.eap-topo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.eap-cod { background: var(--ink); color: #fff; border-radius: 6px; padding: 2px 8px; }
+.eap-tit { font-family: var(--cond); font-weight: 800; font-size: 1.3rem; line-height: 1.05; flex: 1 1 160px; }
+.eap-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.eap-acoes .btn { min-height: 44px; padding: 0 14px; font-size: 1rem; }
+.fer-novo { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.fer-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
+.fer-lista li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; }
+.fer-lista .btn { min-height: 44px; padding: 0 12px; font-size: 1rem; }
+
+/* Planejamento: importação de planilha */
+.eap-barra.centro { justify-content: center; margin-top: var(--sp-3); }
+.eap-barra .btn.secondary { min-height: 48px; padding: 0 14px; font-size: 1rem; }
+.sheet.larga { width: min(760px, 100%); }
+.imp-resumo { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--sp-3); }
+.imp-aviso { background: var(--bad-bg); color: var(--bad-ink); border: 2px solid var(--bad); padding: 10px 12px; font-weight: 700; margin-bottom: var(--sp-3); }
+.imp-lista { list-style: none; margin: var(--sp-3) 0 0; padding: 0; display: grid; gap: var(--sp-2); }
+.imp-linha { background: var(--surface); border: 2px solid var(--line); border-left: 6px solid var(--ink); padding: 8px 12px; }
+.imp-linha.n1 { margin-left: 12px; }
+.imp-linha.n2 { margin-left: 24px; }
+.imp-linha.n3 { margin-left: 36px; }
+.imp-linha.n4 { margin-left: 48px; }
+.imp-linha.erro { border-color: var(--bad); border-left-color: var(--bad); background: var(--bad-bg); }
+.imp-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.imp-topo .btn { min-height: 44px; padding: 0 12px; font-size: 1rem; }
+.imp-campos { display: grid; gap: 0; }
+.imp-campos .field { margin-bottom: 12px; }
+@media (min-width: 700px) { .imp-campos { grid-template-columns: 1fr 2fr 1fr 1fr; gap: 10px; } }
+.imp-erro-arquivo { margin-top: var(--sp-3); border-color: var(--bad); background: var(--bad-bg); color: var(--bad-ink); display: grid; gap: 10px; }
+.sheet-fundo.confirma { z-index: 70; align-items: center; padding: 16px; }
+.sheet-fundo.confirma .sheet { border-radius: var(--radius); }
+.confirma-texto { font-weight: 700; margin: 0 0 14px; }
+
+/* Planejamento: cronograma do longo prazo (barras em CSS, sem biblioteca de Gantt) */
+.cron { overflow-x: auto; border: 2px solid var(--ink); background: var(--surface); }
+.cron-corpo { position: relative; }
+.cron-linha { display: flex; border-bottom: 1px solid var(--line); min-height: 44px; }
+.cron-linha:last-child { border-bottom: 0; }
+.cron-linha.cabeca { background: var(--ink); color: #fff; min-height: 40px; }
+.cron-nome { flex: 0 0 210px; position: sticky; left: 0; z-index: 2; background: var(--surface); border-right: 2px solid var(--ink); display: flex; align-items: center; gap: 6px; padding: 4px 8px; overflow: hidden; }
+.cron-linha.cabeca .cron-nome { background: var(--ink); font-family: var(--cond); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.cron-tit { font-weight: 700; font-size: .9rem; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cron-tit.grupo { font-family: var(--cond); font-weight: 800; font-size: 1.05rem; }
+.cron-trilha { position: relative; flex: none; }
+.cron-linha.cabeca .cron-trilha { display: flex; }
+.cron-col { flex: none; text-align: center; font-family: var(--mono); font-size: .75rem; font-weight: 700; align-self: center; border-left: 1px solid rgba(255,255,255,.25); }
+.cron-barra { position: absolute; top: 9px; height: 26px; background: #CFCAC7; border: 2px solid #A9A4A1; border-radius: 6px; overflow: hidden; }
+.cron-barra.grupo { top: 12px; height: 20px; background: #B7B1AE; border-color: var(--ink); border-radius: 3px; }
+.cron-real { position: absolute; left: 0; top: 0; bottom: 0; background: var(--graphite); }
+.cron-barra.warn .cron-real { background: var(--accent); }
+.cron-barra.bad .cron-real { background: var(--alert); }
+.cron-barra.bad { border-color: var(--alert); }
+.cron-prev { position: absolute; top: -2px; bottom: -2px; width: 3px; margin-left: -1px; background: var(--ink); text-decoration: none; }
+.cron-barra span { position: relative; padding-left: 6px; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: #fff; text-shadow: 0 0 3px #000; white-space: nowrap; line-height: 22px; }
+.cron-barra.grupo span { line-height: 16px; }
+.cron-hoje { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--brand); z-index: 1; pointer-events: none; }
+.cron-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 8px; font-weight: 700; font-size: .85rem; }
+.cron-legenda span::before { content: ""; display: inline-block; width: 14px; height: 10px; margin-right: 6px; vertical-align: -1px; border-radius: 2px; }
+.cron-legenda .p::before { background: #CFCAC7; border: 1px solid #A9A4A1; }
+.cron-legenda .r::before { background: var(--graphite); }
+.cron-legenda .v::before { width: 3px; height: 14px; background: var(--ink); }
+.cron-legenda .h::before { width: 3px; height: 14px; background: var(--brand); }
+.cron-legenda .btn { min-height: 44px; padding: 0 14px; font-size: 1rem; margin-left: auto; }
+
+/* Planejamento: médio prazo (lookahead de restrições). Cada tipo tem cor e ícone próprios; o ícone e o nome nunca dependem só da cor. */
+.tipo { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 12px 4px 8px; font-family: var(--cond); font-weight: 800; font-size: 1rem; letter-spacing: .03em; background: var(--t-bg); color: var(--t-ink); }
+.tipo svg { width: 18px; height: 18px; }
+.material { --t-bg: #FDEED0; --t-ink: #6E4300; --t-borda: #F5A623; }
+.mao-de-obra { --t-bg: #DCEBFA; --t-ink: #174A7C; --t-borda: #3B82C4; }
+.metodo { --t-bg: #E8E0F7; --t-ink: #4A2E8A; --t-borda: #7B5CC4; }
+.equipamento { --t-bg: #E1F2E8; --t-ink: #17613A; --t-borda: #2E8B57; }
+.projeto { --t-bg: #D5F0EE; --t-ink: #0F5C57; --t-borda: #1FA39A; }
+.seguranca { --t-bg: #FBE1E1; --t-ink: #9B2323; --t-borda: #D64545; }
+.logistica { --t-bg: #E9E5E2; --t-ink: #403C3A; --t-borda: #7A7572; }
+.restricao { display: grid; gap: 6px; padding: 12px; border-left: 8px solid var(--t-borda, var(--ink)); }
+.restricao.resolvida { opacity: .7; background: #F2F0EE; }
+.rest-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rest-desc { margin: 0; font-weight: 700; }
+.restricao .m { color: var(--muted); font-size: .88rem; }
+.rest-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.rest-acoes .btn { min-height: 44px; padding: 0 10px; font-size: 1rem; }
+.rest-acoes .btn:disabled { opacity: .4; cursor: not-allowed; }
+.coluna > .mono { margin: -6px 0 0; }
+.field select, .field input[list] { width: 100%; }
+.chips button svg { width: 18px; height: 18px; }
+
+/* Planejamento: curto prazo (Kanban da semana + PPC) */
+.semana-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--sp-3); }
+.semana-nav .btn { min-height: 48px; padding: 0 14px; font-size: 1rem; flex: 1 1 auto; }
+.ppc { display: grid; gap: 10px; margin-bottom: var(--sp-3); }
+.ppc-topo { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ppc-numero { font-family: var(--cond); font-weight: 800; font-size: 5.5rem; line-height: .95; }
+.ppc-quanto { font-family: var(--cond); font-size: 1.6rem; text-align: right; }
+.ppc-quanto b { font-weight: 800; }
+.ppc-barra { height: 20px; background: #E7E3E0; border-radius: 10px; overflow: hidden; }
+.ppc-barra i { display: block; height: 100%; background: var(--graphite); border-radius: 10px; transition: width var(--t-medio); }
+.ppc p.mono { margin: 0; }
+.hist { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; align-items: flex-end; overflow-x: auto; }
+.hist li { flex: 1 0 44px; display: grid; justify-items: center; gap: 4px; }
+.hist-col { width: 100%; max-width: 56px; height: 110px; display: flex; align-items: flex-end; background: #F0EDEB; }
+.hist-col i { display: block; width: 100%; background: #A9A4A1; }
+.hist li.on .hist-col i { background: var(--brand); }
+.atividade-curta { gap: 8px; }
+.atividade-curta.acumulada { border-color: var(--accent); }
+.atividade-curta.nao { border-color: var(--bad); background: var(--bad-bg); }
+.atividade-curta .btn { min-height: 44px; padding: 0 12px; font-size: 1rem; }
+.atividade-curta .mover select { min-height: 44px; }
+.checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checklist li { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
+.checklist li label { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; }
+.checklist li input[type="checkbox"] { width: 24px; height: 24px; flex: none; }
+.checklist li.nao label span { text-decoration: line-through; }
+.sub-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.sub-nova { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }

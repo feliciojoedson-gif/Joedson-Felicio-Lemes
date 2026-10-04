@@ -71,6 +71,14 @@ Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `P
 
 **Próximo passo:** fazer o formulário de **Frentes** gravar de verdade (criar, editar, apagar, pelo `dados.js`, com teste da regra em `lib/` e RLS já existente), porque o Painel só mostra o que existe e hoje as frentes vêm do seed. Faça a mudança, rode `npm run check` e suba pro GitHub (a Vercel publica sozinha). Se preferir outro módulo, a ordem sugerida do plano é Frentes → Restrições → Medições → Administração.
 
+## Módulo Planejamento (Last Planner)
+
+Quatro abas (EAP, Longo, Médio, Curto) em `src/screens/planejamento/`, **todas sobre UMA lista de atividades** (`PlanejamentoContext.jsx`, remontado a cada troca de obra). Regras puras em `src/lib/planejamento.js` (EAP, dias úteis, previsto x real, lookahead, PPC) e `src/lib/importacao.js` (planilha); testes em `tests/{planejamento,cronograma,lookahead,curto,importacao}.mjs`.
+- **Ainda sem banco:** dados em memória em `dados.js` (`ponytail:`), exemplo em `mockData.js` (`planejamentoDeExemplo`, por código de obra). Obra sem exemplo começa vazia.
+- **Única exceção à regra "sem outras bibliotecas": `xlsx` (SheetJS)**, instalada do tarball oficial (`cdn.sheetjs.com`, não do npm, que está desatualizado) e carregada por `import()` só ao importar planilha (`src/lib/planilha.js`). Nada sai do navegador.
+- Semana de planejamento: segunda a domingo; sábado e domingo já olham para a semana seguinte (`segundaDeReferencia`).
+- Confirmação dentro da tela (`useConfirmar` em `planejamento/ui.jsx`), não `window.confirm`: ele some em navegador embutido e o clique "não faz nada".
+
 ## Armadilhas desta base
 
 - **Banco:** projeto Supabase `kaefer-rip` (`rbqzyxyneuqbeyvjdzom`, São Paulo). Chaves em `.env.local` (fora do git; modelo em `.env.example`). Migrations em `supabase/migrations/` e testes de RLS em `supabase/tests/*.sql` (cada um termina em erro `RELATORIO` de propósito, para não gravar nada).

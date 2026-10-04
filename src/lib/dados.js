@@ -5,7 +5,11 @@
 // APP MULTI-OBRA: tudo que é lançamento (frentes, diário, fotos, medições, restrições)
 // sai daqui já recortado por UMA obra. Nenhuma tela recebe dado de duas obras juntas.
 import { supabase } from './supabase.js'
-import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo } from './mockData.js'
+import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, planejamentoDeExemplo } from './mockData.js'
+import {
+  aplicarAtividade, aplicarRestricao, arquivarAtividade, calendarioPadrao, reprogramarRestricao, resolverRestricao,
+  restricoesDaImportacao,
+} from './planejamento.js'
 import { aplicarMovimento, caminhoDaFoto, hojeEmBrasilia, legendaDaFoto, novoPedido, veTodasAsObras } from './regras.js'
 
 const MENSAGENS = {
@@ -185,4 +189,74 @@ export async function moverPedido(obra, id, status, dados, hoje) {
   if (i < 0) return { data: null, erro: new Error('pedido não encontrado') }
   pedidosEmMemoria[i] = aplicarMovimento(pedidosEmMemoria[i], status, dados, hoje)
   return { data: { ...pedidosEmMemoria[i] }, erro: null }
+}
+
+// PLANEJAMENTO (Last Planner): também em memória. Uma lista de atividades por obra, compartilhada por todas as abas
+// (EAP, longo, médio e curto prazo). Toda gravação devolve a foto nova da obra: a tela só troca o estado.
+// ponytail: trocar pelo Supabase (atividades e restrições com obra_id e RLS por obra); só o miolo destas funções muda.
+const planejamentoEmMemoria = new Map()
+
+function doPlanejamento(obra) {
+  if (!planejamentoEmMemoria.has(obra.codigo)) {
+    const exemplo = planejamentoDeExemplo[obra.codigo] || { atividades: [], restricoes: [] }
+    planejamentoEmMemoria.set(obra.codigo, { calendario: calendarioPadrao(), ...structuredClone(exemplo) })
+  }
+  return planejamentoEmMemoria.get(obra.codigo)
+}
+const fotoDoPlanejamento = (obra) => structuredClone(doPlanejamento(obra))
+const gravarPlanejamento = (obra, mudanca) => {
+  Object.assign(doPlanejamento(obra), mudanca)
+  return { data: fotoDoPlanejamento(obra), erro: null }
+}
+
+export async function listarPlanejamento(obra) {
+  return { data: fotoDoPlanejamento(obra), erro: null }
+}
+
+// `id` vazio cria; com `id` edita. Dados de entrada já validados pela tela com `errosAtividade`.
+export async function salvarAtividade(obra, campos, id) {
+  const base = doPlanejamento(obra)
+  const proximoId = Math.max(0, ...base.atividades.map((a) => a.id)) + 1
+  return gravarPlanejamento(obra, { atividades: aplicarAtividade(base.atividades, campos, id, proximoId) })
+}
+
+export async function arquivarAtividadeDaObra(obra, id, arquivada) {
+  const base = doPlanejamento(obra)
+  if (!base.atividades.some((a) => a.id === id)) return { data: null, erro: new Error('atividade não encontrada') }
+  return gravarPlanejamento(obra, { atividades: arquivarAtividade(base.atividades, id, arquivada) })
+}
+
+// Importação de planilha: recebe a lista final já montada e o modo ('adicionar' ou 'substituir').
+export async function importarAtividades(obra, atividades, modo) {
+  const base = doPlanejamento(obra)
+  return gravarPlanejamento(obra, { atividades, restricoes: restricoesDaImportacao(base.restricoes || [], modo) })
+}
+
+// Restrições do lookahead (médio prazo). Sempre da obra informada.
+export async function salvarRestricao(obra, campos, id) {
+  const base = doPlanejamento(obra)
+  const restricoes = base.restricoes || []
+  const proximoId = Math.max(0, ...restricoes.map((r) => r.id)) + 1
+  return gravarPlanejamento(obra, { restricoes: aplicarRestricao(restricoes, campos, id, proximoId) })
+}
+
+export async function resolverRestricaoDaObra(obra, id, resolvida, hoje) {
+  const base = doPlanejamento(obra)
+  return gravarPlanejamento(obra, { restricoes: resolverRestricao(base.restricoes || [], id, resolvida, hoje) })
+}
+
+export async function reprogramarRestricaoDaObra(obra, id, prazo) {
+  const base = doPlanejamento(obra)
+  return gravarPlanejamento(obra, { restricoes: reprogramarRestricao(base.restricoes || [], id, prazo) })
+}
+
+// Troca uma atividade (mesmo id) já calculada pelas regras de lib/planejamento.js: mover de coluna, subtarefas, progresso.
+export async function substituirAtividade(obra, atividade) {
+  const base = doPlanejamento(obra)
+  if (!base.atividades.some((a) => a.id === atividade.id)) return { data: null, erro: new Error('atividade não encontrada') }
+  return gravarPlanejamento(obra, { atividades: base.atividades.map((a) => (a.id === atividade.id ? atividade : a)) })
+}
+
+export async function salvarCalendario(obra, calendario) {
+  return gravarPlanejamento(obra, { calendario })
 }

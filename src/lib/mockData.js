@@ -1,4 +1,6 @@
-// Dados de exemplo do Diário de Obra (RDO). Só `lib/dados.js` importa este arquivo.
+import { calendarioPadrao } from './planejamento.js'
+
+// Dados de exemplo do Diário de Obra (RDO), dos Materiais e do Planejamento. Só `lib/dados.js` importa este arquivo.
 // `obraCodigo` é o código da obra (U12, T405): os ids do banco real não são os do mock.
 
 // Foto de exemplo: um quadro colorido, para a miniatura aparecer sem arquivo de verdade.
@@ -85,3 +87,66 @@ export const pedidos = [
     fornecedor: '', previsaoEntrega: '',
     historico: [{ status: 'solicitar', data: '2026-09-30' }, { status: 'cotacao', data: '2026-10-02' }], recebimento: semRecebimento },
 ]
+
+// ---------- Planejamento (Last Planner) ----------
+// Uma entrada por obra (código da obra). "Hoje" no exemplo = 2026-10-04 (domingo); a semana atual é 05 a 09/10.
+// Atividades: UMA lista que as 4 abas compartilham. status: a_fazer | andamento | concluida | nao_realizado.
+// Restrições (aba Médio prazo): `atividadeId` aponta para a atividade que elas impedem.
+// U12 é a reforma completa; T405 tem poucos registros de propósito, para provar que trocar de obra troca tudo.
+// `concluidaEm`: dia em que foi concluída (o PPC da semana conta por ele). `causa`: causa raiz quando não realizada.
+const atv = (id, titulo, parentId, ordem, inicio, fim, progresso, status, subtarefas = [], concluidaEm = null) => ({
+  id, titulo, parentId, ordem, inicio, fim, progresso, status, causa: '', causaDetalhe: '', concluidaEm, arquivada: false, subtarefas,
+})
+const sub = (id, titulo, feita = false) => ({ id, titulo, feita, naoRealizado: false, causa: '', causaDetalhe: '' })
+const subNao = (id, titulo, causa, causaDetalhe) => ({ id, titulo, feita: false, naoRealizado: true, causa, causaDetalhe })
+const rest = (id, atividadeId, descricao, tipo, prazo, responsavel, resolvida = false) => ({
+  id, atividadeId, descricao, tipo, prazo, responsavel, resolvida,
+})
+
+export const planejamentoDeExemplo = {
+  U12: {
+    atividades: [
+      atv(1, 'Demolição', null, 0, '2026-09-14', '2026-10-06', 0, 'a_fazer'),
+      atv(2, 'Retirada de revestimentos', 1, 0, '2026-09-14', '2026-09-25', 100, 'concluida', [], '2026-09-25'),
+      // Deveria ter terminado na sexta (02/10) e ainda está em 80%: entra na semana como atividade acumulada.
+      atv(3, 'Remoção de louças e esquadrias', 1, 1, '2026-09-21', '2026-10-02', 80, 'andamento', [
+        sub(1, 'Retirar louças dos banheiros', true), sub(2, 'Remover esquadrias de alumínio', true), sub(3, 'Remover pia e bancada da cozinha', true),
+        sub(4, 'Retirar box e acessórios', true), subNao(5, 'Remover porta da cozinha', 'Segurança', 'Aguardando a permissão de trabalho'),
+      ]),
+      atv(4, 'Remoção de entulho', 1, 2, '2026-10-05', '2026-10-06', 100, 'concluida', [], '2026-10-06'),
+      atv(5, 'Hidráulica', null, 1, '2026-09-28', '2026-10-23', 0, 'a_fazer'),
+      atv(6, 'Tubulação de água fria', 5, 0, '2026-09-28', '2026-10-09', 60, 'andamento', [
+        sub(1, 'Prumadas do banheiro', true), sub(2, 'Prumadas da lavanderia', true), sub(3, 'Ramais da cozinha', true),
+        sub(4, 'Ramais da área de serviço'), sub(5, 'Teste de pressão'),
+      ]),
+      atv(7, 'Instalação de ralos', 5, 1, '2026-10-05', '2026-10-07', 100, 'concluida', [], '2026-10-07'),
+      atv(8, 'Elétrica', null, 2, '2026-10-05', '2026-10-16', 0, 'a_fazer'),
+      atv(9, 'Reboco', null, 3, '2026-10-19', '2026-11-06', 0, 'a_fazer'),
+      atv(10, 'Acabamento', null, 4, '2026-11-09', '2026-12-11', 0, 'a_fazer'),
+      atv(11, 'Assentamento de pisos', 10, 0, '2026-11-09', '2026-11-27', 0, 'a_fazer'),
+      atv(12, 'Pintura geral', 10, 1, '2026-11-23', '2026-12-11', 0, 'a_fazer'),
+    ],
+    restricoes: [
+      rest(1, 8, 'Eletrodutos e caixas ainda não chegaram na obra', 'Material', '2026-10-08', 'Carlos (Suprimentos)'),
+      rest(2, 6, 'Bomba de teste de pressão emprestada de outra obra', 'Equipamento', '2026-10-09', 'Marcos (Produção)'),
+      rest(3, 9, 'Falta contratar dois pedreiros para o reboco', 'Mão de Obra', '2026-10-16', 'Ana (Planejamento)'),
+      rest(4, 8, 'Compatibilização do projeto elétrico com o forro', 'Projeto', '2026-10-02', 'Paula (Engenharia)', true),
+      rest(5, 9, 'Definir traço e espessura do reboco com a fiscalização', 'Método', '2026-10-23', 'Paula (Engenharia)'),
+      rest(6, 11, 'Agendar o elevador de carga para subir o porcelanato', 'Logística', '2026-11-04', 'Carlos (Suprimentos)'),
+      // Prazo de uma semana que já passou e ainda aberta: cai na coluna "Atrasadas".
+      rest(7, 3, 'Liberação da permissão de trabalho para remover esquadrias altas', 'Segurança', '2026-10-02', 'Rafael (Segurança)'),
+    ],
+    calendario: calendarioPadrao(),
+  },
+  T405: {
+    atividades: [
+      atv(1, 'Preparação da área', null, 0, '2026-10-01', '2026-10-06', 0, 'a_fazer'),
+      atv(2, 'Isolamento e sinalização', 1, 0, '2026-10-01', '2026-10-06', 100, 'concluida', [], '2026-10-02'),
+      atv(3, 'Remoção de revestimento', null, 1, '2026-10-05', '2026-10-16', 0, 'a_fazer'),
+    ],
+    restricoes: [
+      rest(1, 3, 'Liberação de trabalho a quente pela área operacional', 'Segurança', '2026-10-07', 'Rafael (Segurança)'),
+    ],
+    calendario: calendarioPadrao(),
+  },
+}

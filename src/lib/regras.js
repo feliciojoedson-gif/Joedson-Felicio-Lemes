@@ -16,10 +16,10 @@ export const STATUS_RESTRICAO = ['Aberta', 'Em tratamento', 'Resolvida']
 // ---------- Menus e permissões ----------
 
 export const MENUS = {
-  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'rdo', 'admin', 'perfil'],
-  Planejamento: ['painel', 'frentes', 'medicoes', 'materiais', 'perfil'],
+  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'rdo', 'admin', 'perfil'],
+  Planejamento: ['painel', 'frentes', 'planejamento', 'medicoes', 'materiais', 'perfil'],
   Engenharia: ['restricoes', 'frentes', 'perfil'],
-  Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'materiais', 'perfil'],
+  Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'materiais', 'planejamento', 'perfil'],
   Medição: ['medicoes', 'frentes', 'perfil'],
   'Custos e Controle': ['painel', 'medicoes', 'perfil'],
   'Gestão Contratual': ['restricoes', 'medicoes', 'frentes', 'perfil'],
@@ -36,6 +36,7 @@ export const ROTULOS = {
   medicoes: 'Medições',
   restricoes: 'Restrições',
   materiais: 'Materiais',
+  planejamento: 'Planejamento',
   fotos: 'Fotos',
   admin: 'Administração',
   perfil: 'Meu perfil',
