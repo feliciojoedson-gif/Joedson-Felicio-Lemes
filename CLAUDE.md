@@ -50,9 +50,9 @@ Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `P
 - Diário de obra: lista de frentes, formulário do dia gravando no banco, correção no mesmo dia, até 4 fotos por lançamento (comprimidas no navegador, enviadas ao bucket `fotos`), fotos já enviadas visíveis ao corrigir, foto que falha fica no formulário e "Salvar" tenta de novo.
 - Detalhe da frente e tela Fotos mostram a imagem real (link assinado de 1 hora).
 - Publicado na Vercel; login abre no link público. `npm run check` fecha em zero (75 testes).
+- **Deploy automático confirmado:** o envio do commit `9177184` à `main` gerou sozinho um deployment de produção "Pronto" (conferido na aba Visão geral da Vercel).
 
 **Pela metade:**
-- **Envio automático ao GitHub → Vercel não foi testado.** O primeiro envio depois do deploy é o teste: conferir na aba Deployments da Vercel que um deployment novo apareceu sozinho.
 - Etapa 10 da skill (varredura final no link público) **não foi feita**; só se conferiu que a tela de login abre e o JavaScript publicado tem a URL e a chave do Supabase. Login real no link público foi dito "funcionou" pela pessoa, sem varredura completa.
 - Foto órfã: se o arquivo sobe e a linha em `fotos` falha, o arquivo fica no bucket (só o Coordenador apaga). Marcado com `ponytail:` em `dados.js`.
 - `carregarBase` busca um link assinado por foto, todas de uma vez. Paginar se a obra passar de algumas centenas de fotos.
@@ -68,7 +68,7 @@ Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `P
 - Arquivos soltos na raiz que não são do app: imagem do WhatsApp, `oficina-ok.txt`, `preview.html`.
 - 2FA da conta da Vercel não configurado. Plano grátis da Vercel tem restrição de uso comercial: conferir os termos antes de a equipe usar.
 
-**Próximo passo:** fazer o formulário de **Frentes** gravar de verdade (criar, editar, apagar, pelo `dados.js`, com teste da regra em `lib/` e RLS já existente), porque o Painel só mostra o que existe e hoje as frentes vêm do seed. Faça a mudança, rode `npm run check`, suba pro GitHub e confira na Vercel que o deploy automático aconteceu (isso fecha a pendência acima). Se preferir outro módulo, a ordem sugerida do plano é Frentes → Restrições → Medições → Administração.
+**Próximo passo:** fazer o formulário de **Frentes** gravar de verdade (criar, editar, apagar, pelo `dados.js`, com teste da regra em `lib/` e RLS já existente), porque o Painel só mostra o que existe e hoje as frentes vêm do seed. Faça a mudança, rode `npm run check` e suba pro GitHub (a Vercel publica sozinha). Se preferir outro módulo, a ordem sugerida do plano é Frentes → Restrições → Medições → Administração.
 
 ## Armadilhas desta base
 
