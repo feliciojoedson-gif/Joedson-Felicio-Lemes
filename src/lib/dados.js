@@ -8,7 +8,7 @@ import { supabase } from './supabase.js'
 import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, planejamentoDeExemplo } from './mockData.js'
 import {
   aplicarAtividade, aplicarRestricao, arquivarAtividade, calendarioPadrao, reprogramarRestricao, resolverRestricao,
-  restricoesDaImportacao,
+  restricoesDaImportacao, baselineDaImportacao, criarBaseline,
 } from './planejamento.js'
 import { aplicarMovimento, caminhoDaFoto, hojeEmBrasilia, legendaDaFoto, novoPedido, veTodasAsObras } from './regras.js'
 
@@ -199,7 +199,7 @@ const planejamentoEmMemoria = new Map()
 function doPlanejamento(obra) {
   if (!planejamentoEmMemoria.has(obra.codigo)) {
     const exemplo = planejamentoDeExemplo[obra.codigo] || { atividades: [], restricoes: [] }
-    planejamentoEmMemoria.set(obra.codigo, { calendario: calendarioPadrao(), ...structuredClone(exemplo) })
+    planejamentoEmMemoria.set(obra.codigo, { calendario: calendarioPadrao(), baseline: null, ...structuredClone(exemplo) })
   }
   return planejamentoEmMemoria.get(obra.codigo)
 }
@@ -229,7 +229,15 @@ export async function arquivarAtividadeDaObra(obra, id, arquivada) {
 // Importação de planilha: recebe a lista final já montada e o modo ('adicionar' ou 'substituir').
 export async function importarAtividades(obra, atividades, modo) {
   const base = doPlanejamento(obra)
-  return gravarPlanejamento(obra, { atividades, restricoes: restricoesDaImportacao(base.restricoes || [], modo) })
+  return gravarPlanejamento(obra, {
+    atividades, restricoes: restricoesDaImportacao(base.restricoes || [], modo), baseline: baselineDaImportacao(base.baseline, modo),
+  })
+}
+
+// Linha de base: congela as datas planejadas de agora. Salvar de novo substitui a anterior (a tela confirma antes).
+export async function salvarBaseline(obra, hoje) {
+  const base = doPlanejamento(obra)
+  return gravarPlanejamento(obra, { baseline: criarBaseline(base.atividades, hoje) })
 }
 
 // Restrições do lookahead (médio prazo). Sempre da obra informada.

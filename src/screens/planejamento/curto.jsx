@@ -204,12 +204,12 @@ export default function Curto({ avisar, irPara }) {
   const progresso = (item, valor) => gravar({ ...original(item.id), progresso: valor }, `Progresso em ${valor}%.`)
   const sub = (item, acao, s, extra) => {
     const a = original(item.id)
-    if (acao === 'adicionar') return gravar(novaSubtarefa(a, s), 'Subtarefa adicionada.')
-    if (acao === 'alternar') return gravar(alternarSubtarefa(a, s.id, extra), extra ? 'Subtarefa concluída.' : 'Subtarefa reaberta.')
+    if (acao === 'adicionar') return gravar(novaSubtarefa(a, s, hoje), 'Subtarefa adicionada.')
+    if (acao === 'alternar') return gravar(alternarSubtarefa(a, s.id, extra, hoje), extra ? 'Subtarefa concluída.' : 'Subtarefa reaberta.')
     if (acao === 'nao') {
-      return setCausa({ titulo: `Subtarefa "${s.titulo}": por que não foi realizada?`, aoSalvar: (c) => gravar(naoRealizarSubtarefa(a, s.id, c.causa, c.detalhe), 'Subtarefa marcada como não realizada.') })
+      return setCausa({ titulo: `Subtarefa "${s.titulo}": por que não foi realizada?`, aoSalvar: (c) => gravar(naoRealizarSubtarefa(a, s.id, c.causa, c.detalhe, hoje), 'Subtarefa marcada como não realizada.') })
     }
-    return pedir(`Remover a subtarefa "${s.titulo}"?`, () => gravar(removerSubtarefa(a, s.id), 'Subtarefa removida.'), 'Remover')
+    return pedir(`Remover a subtarefa "${s.titulo}"?`, () => gravar(removerSubtarefa(a, s.id, hoje), 'Subtarefa removida.'), 'Remover')
   }
 
   const semAtividades = atividades.length === 0

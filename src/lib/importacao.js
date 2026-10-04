@@ -3,7 +3,8 @@
 // A hierarquia vem do código da coluna ITEM: 1 é de topo, 1.1 é filho do 1, 1.1.1 é filho do 1.1, em qualquer profundidade.
 import { dataValida, diasUteis } from './planejamento.js'
 
-export const COLUNAS_MODELO = ['ITEM', 'Atividade', 'Início', 'Término', 'Duração (Dias)']
+// As duas últimas (Início Real e Término Real) são opcionais: quem não as tem deixa em branco ou apaga as colunas.
+export const COLUNAS_MODELO = ['ITEM', 'Atividade', 'Início', 'Término', 'Duração (Dias)', 'Início Real', 'Término Real']
 export const LIMITE_LINHAS_VISIVEIS = 200
 
 const semAcento = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
@@ -15,10 +16,13 @@ const ALIAS = {
   inicio: ['inicio', 'data inicio', 'data de inicio'],
   termino: ['termino', 'fim', 'data termino', 'data de termino', 'data fim'],
   duracao: ['duracao (dias)', 'duracao', 'dias'],
+  inicioReal: ['inicio real', 'data inicio real', 'real inicio'],
+  fimReal: ['termino real', 'fim real', 'data termino real', 'real termino'],
 }
 
 // ---------- Datas ----------
 
+const preenchido = (texto) => String(texto ?? '').trim() !== ''
 const doisDigitos = (n) => String(n).padStart(2, '0')
 export const formatarDataBr = (iso) => (iso && dataValida(iso) ? iso.split('-').reverse().join('/') : '')
 
@@ -109,7 +113,10 @@ export function linhasDaPlanilha(matriz) {
   const linhas = []
   for (let i = cab + 1; i < matriz.length; i++) {
     const pegar = (campo) => (col[campo] === undefined ? '' : String(matriz[i][col[campo]] ?? '').trim())
-    const l = { codigo: pegar('codigo'), titulo: pegar('titulo'), inicio: pegar('inicio'), termino: pegar('termino'), duracao: pegar('duracao') }
+    const l = {
+      codigo: pegar('codigo'), titulo: pegar('titulo'), inicio: pegar('inicio'), termino: pegar('termino'), duracao: pegar('duracao'),
+      inicioReal: pegar('inicioReal'), fimReal: pegar('fimReal'),
+    }
     if (!Object.values(l).some(Boolean)) continue
     linhas.push({ chave: linhas.length, linhaOrigem: i + 1, ...l })
   }
@@ -124,6 +131,7 @@ export function linhasDaPlanilha(matriz) {
 export function analisarLinhas(linhas, cal) {
   const itens = linhas.map((l) => ({
     ...l, cod: normalizarCodigo(l.codigo), isoInicio: lerDataBr(l.inicio), isoFim: lerDataBr(l.termino), erros: {},
+    isoInicioReal: lerDataBr(l.inicioReal), isoFimReal: lerDataBr(l.fimReal),
   }))
   const primeira = new Map()
   for (const it of itens) if (it.cod && !primeira.has(it.cod)) primeira.set(it.cod, it.linhaOrigem)
@@ -141,6 +149,13 @@ export function analisarLinhas(linhas, cal) {
     if (!it.isoInicio) e.inicio = 'Data de início inválida (use DD/MM/AAAA).'
     if (!it.isoFim) e.termino = 'Data de término inválida (use DD/MM/AAAA).'
     else if (it.isoInicio && it.isoFim < it.isoInicio) e.termino = 'O término não pode ser antes do início.'
+    // Datas reais são opcionais, mas se vierem precisam fazer sentido.
+    if (preenchido(it.inicioReal) && !it.isoInicioReal) e.inicioReal = 'Início real inválido (use DD/MM/AAAA).'
+    if (preenchido(it.fimReal)) {
+      if (!it.isoFimReal) e.fimReal = 'Término real inválido (use DD/MM/AAAA).'
+      else if (!preenchido(it.inicioReal)) e.fimReal = 'Informe o início real antes do término real.'
+      else if (it.isoInicioReal && it.isoFimReal < it.isoInicioReal) e.fimReal = 'O término real não pode ser antes do início real.'
+    }
     it.temErro = Object.keys(e).length > 0
     it.duracaoUteis = it.isoInicio && it.isoFim && it.isoFim >= it.isoInicio ? diasUteis(it.isoInicio, it.isoFim, cal) : null
     it.nivel = it.cod ? it.cod.split('.').length - 1 : 0
@@ -166,9 +181,14 @@ export function montarAtividades(itens, modo, existentes) {
     const ordem = ordemDoPai.get(chavePai) ?? (pai ? 0 : ordemRaiz)
     ordemDoPai.set(chavePai, ordem + 1)
     idDoCodigo.set(it.cod, proximoId)
+    // Término real = concluída; só início real = em andamento; sem datas reais = a fazer.
+    const concluida = Boolean(it.isoFimReal)
+    const andando = !concluida && Boolean(it.isoInicioReal)
     novas.push({
       id: proximoId++, titulo: it.titulo, parentId: pai ? idDoCodigo.get(pai) : null, ordem, inicio: it.isoInicio, fim: it.isoFim,
-      progresso: 0, status: 'a_fazer', causa: '', arquivada: false, subtarefas: [],
+      inicioReal: it.isoInicioReal, fimReal: it.isoFimReal, concluidaEm: concluida ? it.isoFimReal : null,
+      progresso: concluida ? 100 : andando ? 10 : 0, status: concluida ? 'concluida' : andando ? 'andamento' : 'a_fazer',
+      causa: '', causaDetalhe: '', arquivada: false, subtarefas: [],
     })
   }
   return [...base, ...novas]

@@ -1,6 +1,6 @@
 // Importação de cronograma (src/lib/importacao.js e planilha.js). Node puro: `node tests/importacao.mjs`.
 import {
-  analisarLinhas, formatarDataBr, lerCsv, lerDataBr, linhasDaPlanilha, montarAtividades, normalizarCodigo,
+  analisarLinhas, COLUNAS_MODELO, formatarDataBr, lerCsv, lerDataBr, linhasDaPlanilha, montarAtividades, normalizarCodigo,
 } from '../src/lib/importacao.js'
 import { arvore, calendarioPadrao, restricoesDaImportacao } from '../src/lib/planejamento.js'
 import { gerarModelo, lerPlanilha } from '../src/lib/planilha.js'
@@ -112,7 +112,8 @@ conferir('adicionar mantém as restrições', restricoesDaImportacao(restr, 'adi
 // Planilha modelo: gerar, abrir de novo e importar
 const bytes = await gerarModelo(cal)
 const lida = await lerPlanilha(new File([bytes], 'modelo.xlsx'))
-conferir('modelo: cabeçalho idêntico', lida[0], cab)
+conferir('modelo: cabeçalho com as 5 colunas e as 2 reais', lida[0], COLUNAS_MODELO)
+conferir('modelo: colunas reais em branco', lida.slice(1, 5).map((l) => [l[5], l[6]]), [['', ''], ['', ''], ['', ''], ['', '']])
 conferir('modelo: ITEM sai como texto', lida.slice(1, 5).map((l) => l[0]), ['1', '2', '2.1', '2.2'])
 conferir('modelo: datas em DD/MM/AAAA', lida[1].slice(2, 5), ['05/10/2026', '09/10/2026', '5'])
 const doModelo = analisarLinhas(linhasDaPlanilha(lida).linhas, cal)

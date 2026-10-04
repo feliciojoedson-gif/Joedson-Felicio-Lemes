@@ -6,7 +6,7 @@ import { gerarModelo, lerPlanilha } from '../../lib/planilha.js'
 import { formatarDataCurta } from '../../lib/regras.js'
 import {
   arvore, diasUteis, errosAtividade, opcoesDePai, opcoesDePosicao, progressoDaAtividade, restricoesAbertasPorAtividade, ROTULO_STATUS,
-  statusDaAtividade, textoDiasUteis, TOM_STATUS,
+  periodoRealDaAtividade, statusDaAtividade, textoDiasUteis, TOM_STATUS,
 } from '../../lib/planejamento.js'
 import Importacao from './importacao.jsx'
 import { Aviso, Estado, Folha, useAvisos, useConfirmar } from './ui.jsx'
@@ -18,15 +18,19 @@ function FormAtividade({ atividade, paiInicial, onSalvar, onFechar }) {
   const [inicio, setInicio] = useState(atividade?.inicio ?? hoje)
   const [fim, setFim] = useState(atividade?.fim ?? hoje)
   const [parentId, setParentId] = useState(String(atividade ? atividade.parentId ?? '' : paiInicial ?? ''))
+  const [inicioReal, setInicioReal] = useState(atividade?.inicioReal ?? '')
+  const [fimReal, setFimReal] = useState(atividade?.fimReal ?? '')
   const [antesDeId, setAntesDeId] = useState('')
   const [salvando, setSalvando] = useState(false)
 
-  const erros = errosAtividade({ titulo, inicio, fim })
+  const folha = atividade?.filhos === 0 // grupo não tem datas reais próprias: elas vêm das atividades dentro dele
+  const erros = errosAtividade({ titulo, inicio, fim, inicioReal, fimReal })
   const { aviso, tocar, tentar } = useAvisos(erros)
   const pais = opcoesDePai(atividades, atividade?.id)
   const posicoes = opcoesDePosicao(atividades, parentId === '' ? null : Number(parentId), atividade?.id)
   const sujo = atividade
     ? titulo !== atividade.titulo || inicio !== atividade.inicio || fim !== atividade.fim || parentId !== String(atividade.parentId ?? '') || antesDeId !== ''
+      || inicioReal !== (atividade.inicioReal ?? '') || fimReal !== (atividade.fimReal ?? '')
     : Boolean(titulo.trim())
   const duracao = diasUteis(inicio, fim, calendario)
 
@@ -35,6 +39,8 @@ function FormAtividade({ atividade, paiInicial, onSalvar, onFechar }) {
     setSalvando(true)
     await onSalvar({
       titulo, inicio, fim,
+      // As datas reais só existem na edição: atividade nova ainda não começou.
+      ...(folha ? { inicioReal, fimReal } : {}),
       parentId: parentId === '' ? null : Number(parentId),
       antesDeId: antesDeId === '' ? null : Number(antesDeId),
     })
@@ -61,6 +67,20 @@ function FormAtividade({ atividade, paiInicial, onSalvar, onFechar }) {
             <Aviso texto={aviso('fim')} />
             {!erros.inicio && !erros.fim && <div className="mono" style={{ marginTop: 6 }}>Duração: {textoDiasUteis(duracao)}</div>}
           </div>
+          {folha && (
+            <>
+              <div className="field">
+                <label htmlFor="atv-inicio-real">Início real (opcional)</label>
+                <input id="atv-inicio-real" className="input" type="date" value={inicioReal} onChange={(e) => setInicioReal(e.target.value)} onBlur={() => tocar('inicioReal')} />
+                <Aviso texto={aviso('inicioReal')} />
+              </div>
+              <div className="field">
+                <label htmlFor="atv-fim-real">Término real (opcional)</label>
+                <input id="atv-fim-real" className="input" type="date" min={inicioReal || undefined} value={fimReal} onChange={(e) => setFimReal(e.target.value)} onBlur={() => tocar('fimReal')} />
+                <Aviso texto={aviso('fimReal')} />
+              </div>
+            </>
+          )}
           <div className="field">
             <label htmlFor="atv-pai">Dentro de</label>
             <select id="atv-pai" className="select" value={parentId} onChange={(e) => { setParentId(e.target.value); setAntesDeId('') }}>
@@ -90,6 +110,7 @@ function LinhaEap({ a, atividades, calendario, restricoes, onEditar, onSub, onAr
   const status = statusDaAtividade(atividades, a.id)
   const dias = diasUteis(a.inicio, a.fim, calendario)
   const grupo = a.filhos > 0
+  const real = periodoRealDaAtividade(atividades, a.id)
   return (
     <li className={`eap-linha n${Math.min(a.nivel, 3)} ${a.arquivadaEfetiva ? 'arquivada' : ''}`}>
       <div className="eap-topo">
@@ -101,6 +122,7 @@ function LinhaEap({ a, atividades, calendario, restricoes, onEditar, onSub, onAr
       <div className="eap-meta mono">
         {formatarDataCurta(a.inicio)} → {formatarDataCurta(a.fim)} · {textoDiasUteis(dias)} · {progresso}%{grupo ? ` · ${a.filhos} ${a.filhos === 1 ? 'sub' : 'subs'}` : ''}
       </div>
+      <div className="eap-meta mono">Início real: {formatarDataCurta(real.inicioReal)} · Término real: {formatarDataCurta(real.fimReal)}</div>
       <div className="eap-acoes">
         {!a.arquivada && !a.arquivadaEfetiva && <button type="button" className="btn secondary" onClick={() => onEditar(a)}>Editar</button>}
         {!a.arquivadaEfetiva && <button type="button" className="btn secondary" onClick={() => onSub(a)}><Icone nome="plus" />Sub</button>}

@@ -105,7 +105,7 @@ export function opcoesDePosicao(atividades, parentId, excluirId) {
 
 // ---------- Criar e editar ----------
 
-export function errosAtividade({ titulo, inicio, fim }) {
+export function errosAtividade({ titulo, inicio, fim, inicioReal, fimReal }) {
   const erros = {}
   if (!String(titulo || '').trim()) erros.titulo = 'Informe o título da atividade.'
   if (!inicio) erros.inicio = 'Informe a data de início.'
@@ -113,6 +113,12 @@ export function errosAtividade({ titulo, inicio, fim }) {
   if (!fim) erros.fim = 'Informe a data de fim.'
   else if (!dataValida(fim)) erros.fim = 'Data de fim inválida.'
   else if (inicio && dataValida(inicio) && fim < inicio) erros.fim = 'O fim não pode ser antes do início.'
+  if (inicioReal && !dataValida(inicioReal)) erros.inicioReal = 'Início real inválido.'
+  if (fimReal) {
+    if (!dataValida(fimReal)) erros.fimReal = 'Término real inválido.'
+    else if (!inicioReal) erros.fimReal = 'Informe o início real antes do término real.'
+    else if (dataValida(inicioReal) && fimReal < inicioReal) erros.fimReal = 'O término real não pode ser antes do início real.'
+  }
   return erros
 }
 
@@ -123,6 +129,8 @@ export function aplicarAtividade(atividades, campos, id, proximoId) {
   const parentId = campos.parentId ?? null
   const antesDeId = campos.antesDeId ?? null
   const dados = { titulo: campos.titulo.trim(), inicio: campos.inicio, fim: campos.fim }
+  // Datas reais só vêm do formulário de edição; quem não as informa não mexe nas que já existem.
+  const reais = 'inicioReal' in campos ? { inicioReal: campos.inicioReal || null, fimReal: campos.fimReal || null } : {}
   const existente = id ? atividades.find((a) => a.id === id) : null
   const mudouDeLugar = !existente || (existente.parentId ?? null) !== parentId || antesDeId !== null
 
@@ -130,10 +138,13 @@ export function aplicarAtividade(atividades, campos, id, proximoId) {
   let alvoId
   if (existente) {
     alvoId = existente.id
-    lista = atividades.map((a) => (a.id === id ? { ...a, ...dados, parentId } : a))
+    // Concluída com término real novo: o dia da conclusão (que o PPC usa) acompanha.
+    lista = atividades.map((a) => (a.id === id
+      ? { ...a, ...dados, ...reais, parentId, ...(a.status === 'concluida' && reais.fimReal ? { concluidaEm: reais.fimReal } : {}) }
+      : a))
   } else {
     alvoId = proximoId
-    const nova = { id: proximoId, ...dados, parentId, ordem: 0, progresso: 0, status: 'a_fazer', causa: '', arquivada: false, subtarefas: [] }
+    const nova = { id: proximoId, ...dados, inicioReal: null, fimReal: null, parentId, ordem: 0, progresso: 0, status: 'a_fazer', causa: '', arquivada: false, subtarefas: [] }
     lista = [...atividades, nova]
   }
   if (!mudouDeLugar) return lista
@@ -251,11 +262,82 @@ export function posicaoDoDia(iso, colunas) {
   return (diasEntreDatas(t0, iso) / diasEntreDatas(t0, fimLinha)) * 100
 }
 
+// ---------- Linha de base (planejado original x atual) ----------
+
+// Foto das datas planejadas de todas as atividades no dia em que a pessoa decide congelar o plano.
+export const criarBaseline = (atividades, hoje) => ({
+  salvaEm: hoje, itens: atividades.map((a) => ({ id: a.id, inicio: a.inicio, fim: a.fim })),
+})
+
+// Dias úteis entre duas datas, com sinal: positivo quando `para` vem depois de `de` (atrasou), negativo quando vem antes.
+export function deslocamentoUteis(de, para, cal) {
+  if (de === para) return 0
+  return para > de ? diasUteis(somarDias(de, 1), para, cal) : -diasUteis(somarDias(para, 1), de, cal)
+}
+
+// Para cada atividade viva: onde estava na linha de base e quanto o início e o término se deslocaram (em dias úteis).
+// Atividade criada depois da linha de base é "nova". Sem linha de base, devolve null.
+export function compararBaseline(atividades, baseline, cal) {
+  if (!baseline) return null
+  const antigos = new Map(baseline.itens.map((i) => [i.id, i]))
+  const mapa = new Map()
+  for (const a of atividadesAtivas(atividades)) {
+    const lb = antigos.get(a.id)
+    if (!lb) { mapa.set(a.id, { situacao: 'nova' }); continue }
+    const desvioInicio = deslocamentoUteis(lb.inicio, a.inicio, cal)
+    const desvioFim = deslocamentoUteis(lb.fim, a.fim, cal)
+    const situacao = desvioFim > 0 || desvioInicio > 0 ? 'atrasou' : desvioFim < 0 || desvioInicio < 0 ? 'adiantou' : 'igual'
+    mapa.set(a.id, { situacao, inicioLB: lb.inicio, fimLB: lb.fim, desvioInicio, desvioFim })
+  }
+  return mapa
+}
+
+export function resumoBaseline(comparacao, atividades, baseline, cal) {
+  const vivas = atividadesAtivas(atividades)
+  const itens = vivas.map((a) => comparacao.get(a.id))
+  const fimLB = baseline.itens.filter((i) => vivas.some((a) => a.id === i.id)).map((i) => i.fim).sort().at(-1) || null
+  const fimAtual = vivas.map((a) => a.fim).sort().at(-1) || null
+  return {
+    atrasadas: itens.filter((i) => i.situacao === 'atrasou').length,
+    adiantadas: itens.filter((i) => i.situacao === 'adiantou').length,
+    novas: itens.filter((i) => i.situacao === 'nova').length,
+    fimLB, fimAtual, desvioFinal: fimLB && fimAtual ? deslocamentoUteis(fimLB, fimAtual, cal) : 0,
+  }
+}
+
+export const textoDesvio = (n) => (n === 0 ? 'no prazo' : `${n > 0 ? '+' : '-'}${Math.abs(n)} ${Math.abs(n) === 1 ? 'dia útil' : 'dias úteis'}`)
+
+// "Substituir" na importação recomeça os ids: a linha de base antiga passaria a apontar para atividades sem relação.
+export const baselineDaImportacao = (baseline, modo) => (modo === 'substituir' ? null : baseline)
+
+// Início e término reais. Folha: os dela. Grupo: começou quando a primeira atividade dentro dele começou e só terminou
+// quando TODAS terminaram (aí vale a última data). Sem dado, null.
+export function periodoRealDaAtividade(atividades, id) {
+  const lista = atividadesAtivas(atividades)
+  const alvo = lista.find((a) => a.id === id)
+  if (!alvo) return { inicioReal: null, fimReal: null }
+  if (alvo.filhos === 0) return { inicioReal: alvo.inicioReal || null, fimReal: alvo.fimReal || null }
+  const dentro = descendentes(atividades, id)
+  const partes = folhas(lista).filter((a) => dentro.has(a.id))
+  const inicios = partes.map((a) => a.inicioReal).filter(Boolean).sort()
+  const todasTerminaram = partes.length > 0 && partes.every((a) => a.fimReal)
+  return { inicioReal: inicios[0] || null, fimReal: todasTerminaram ? partes.map((a) => a.fimReal).sort().at(-1) : null }
+}
+
 // Obra longa abre por mês, curta por semana (a pessoa troca quando quiser).
 export const LIMITE_SEMANAS_INICIAL = 26
 export function escalaPadrao(periodo) {
   if (!periodo) return 'semana'
   return colunasDoCronograma(periodo.inicio, periodo.fim, 'semana').length > LIMITE_SEMANAS_INICIAL ? 'mes' : 'semana'
+}
+
+// Alarga o período para caber outras datas (linha de base, datas reais). Datas vazias são ignoradas.
+export function ampliarPeriodo(periodo, datas) {
+  const validas = datas.filter(Boolean)
+  return {
+    inicio: [periodo.inicio, ...validas].sort()[0],
+    fim: [periodo.fim, ...validas].sort().at(-1),
+  }
 }
 
 // Primeiro e último dia entre as atividades vivas (null se não houver nenhuma).
@@ -466,12 +548,12 @@ export function percentualDasSubtarefas(subtarefas) {
 
 // Mantém a atividade coerente com o checklist: o % real vem das subtarefas, a primeira marcada tira da fila de "a fazer",
 // e uma atividade concluída que ganha subtarefa pendente volta a andamento.
-export function recalcularAtividade(a) {
+export function recalcularAtividade(a, hoje) {
   const pct = percentualDasSubtarefas(a.subtarefas)
   if (pct === null) return a
   const r = { ...a, progresso: pct }
-  if (r.status === 'concluida' && pct < 100) { r.status = 'andamento'; r.concluidaEm = null }
-  if (r.status === 'a_fazer' && pct > 0) r.status = 'andamento'
+  if (r.status === 'concluida' && pct < 100) { r.status = 'andamento'; r.concluidaEm = null; r.fimReal = null }
+  if (r.status === 'a_fazer' && pct > 0) { r.status = 'andamento'; r.inicioReal = r.inicioReal || hoje || null }
   return r
 }
 
@@ -483,12 +565,15 @@ export function moverAtividade(a, destino, { causa = '', detalhe = '' } = {}, ho
   const limpa = { causa: '', causaDetalhe: '' }
   switch (destino) {
     case 'a_fazer':
-      return { ...a, ...limpa, status: 'a_fazer', concluidaEm: null, progresso: pct ?? 0 }
+      return { ...a, ...limpa, status: 'a_fazer', concluidaEm: null, inicioReal: null, fimReal: null, progresso: pct ?? 0 }
     case 'andamento':
-      return { ...a, ...limpa, status: 'andamento', concluidaEm: null, progresso: pct ?? (a.progresso > 0 && a.progresso < 100 ? a.progresso : 10) }
+      return {
+        ...a, ...limpa, status: 'andamento', concluidaEm: null, fimReal: null, inicioReal: a.inicioReal || hoje,
+        progresso: pct ?? (a.progresso > 0 && a.progresso < 100 ? a.progresso : 10),
+      }
     case 'concluida':
       return {
-        ...a, ...limpa, status: 'concluida', progresso: 100, concluidaEm: hoje,
+        ...a, ...limpa, status: 'concluida', progresso: 100, concluidaEm: hoje, inicioReal: a.inicioReal || hoje, fimReal: hoje,
         subtarefas: (a.subtarefas || []).map((s) => ({ ...s, feita: true, naoRealizado: false, causa: '', causaDetalhe: '' })),
       }
     case 'nao_realizado':
@@ -498,17 +583,17 @@ export function moverAtividade(a, destino, { causa = '', detalhe = '' } = {}, ho
   }
 }
 
-export function novaSubtarefa(a, titulo) {
+export function novaSubtarefa(a, titulo, hoje) {
   const id = Math.max(0, ...(a.subtarefas || []).map((s) => s.id)) + 1
-  return recalcularAtividade({ ...a, subtarefas: [...(a.subtarefas || []), { id, titulo: titulo.trim(), feita: false, naoRealizado: false, causa: '', causaDetalhe: '' }] })
+  return recalcularAtividade({ ...a, subtarefas: [...(a.subtarefas || []), { id, titulo: titulo.trim(), feita: false, naoRealizado: false, causa: '', causaDetalhe: '' }] }, hoje)
 }
-export const alternarSubtarefa = (a, id, feita) => recalcularAtividade({
+export const alternarSubtarefa = (a, id, feita, hoje) => recalcularAtividade({
   ...a, subtarefas: a.subtarefas.map((s) => (s.id === id ? { ...s, feita, naoRealizado: false, causa: '', causaDetalhe: '' } : s)),
-})
-export const naoRealizarSubtarefa = (a, id, causa, detalhe) => recalcularAtividade({
+}, hoje)
+export const naoRealizarSubtarefa = (a, id, causa, detalhe, hoje) => recalcularAtividade({
   ...a, subtarefas: a.subtarefas.map((s) => (s.id === id ? { ...s, feita: false, naoRealizado: true, causa, causaDetalhe: String(detalhe || '').trim() } : s)),
-})
-export const removerSubtarefa = (a, id) => recalcularAtividade({ ...a, subtarefas: a.subtarefas.filter((s) => s.id !== id) })
+}, hoje)
+export const removerSubtarefa = (a, id, hoje) => recalcularAtividade({ ...a, subtarefas: a.subtarefas.filter((s) => s.id !== id) }, hoje)
 
 // Regra da semana: a atividade entra se o período dela cruza a semana OU se deveria ter terminado antes da semana e ainda
 // não terminou (acumulada). Concluída antes da semana já saiu da fila. Sábado e domingo contam para a semana seguinte.

@@ -94,8 +94,9 @@ export const pedidos = [
 // Restrições (aba Médio prazo): `atividadeId` aponta para a atividade que elas impedem.
 // U12 é a reforma completa; T405 tem poucos registros de propósito, para provar que trocar de obra troca tudo.
 // `concluidaEm`: dia em que foi concluída (o PPC da semana conta por ele). `causa`: causa raiz quando não realizada.
-const atv = (id, titulo, parentId, ordem, inicio, fim, progresso, status, subtarefas = [], concluidaEm = null) => ({
-  id, titulo, parentId, ordem, inicio, fim, progresso, status, causa: '', causaDetalhe: '', concluidaEm, arquivada: false, subtarefas,
+// `inicioReal` e `fimReal`: quando a atividade realmente começou e terminou (o planejado fica em inicio e fim).
+const atv = (id, titulo, parentId, ordem, inicio, fim, progresso, status, subtarefas = [], concluidaEm = null, inicioReal = null, fimReal = null) => ({
+  id, titulo, parentId, ordem, inicio, fim, progresso, status, causa: '', causaDetalhe: '', concluidaEm, inicioReal, fimReal, arquivada: false, subtarefas,
 })
 const sub = (id, titulo, feita = false) => ({ id, titulo, feita, naoRealizado: false, causa: '', causaDetalhe: '' })
 const subNao = (id, titulo, causa, causaDetalhe) => ({ id, titulo, feita: false, naoRealizado: true, causa, causaDetalhe })
@@ -107,19 +108,19 @@ export const planejamentoDeExemplo = {
   U12: {
     atividades: [
       atv(1, 'Demolição', null, 0, '2026-09-14', '2026-10-06', 0, 'a_fazer'),
-      atv(2, 'Retirada de revestimentos', 1, 0, '2026-09-14', '2026-09-25', 100, 'concluida', [], '2026-09-25'),
+      atv(2, 'Retirada de revestimentos', 1, 0, '2026-09-14', '2026-09-25', 100, 'concluida', [], '2026-09-25', '2026-09-14', '2026-09-25'),
       // Deveria ter terminado na sexta (02/10) e ainda está em 80%: entra na semana como atividade acumulada.
       atv(3, 'Remoção de louças e esquadrias', 1, 1, '2026-09-21', '2026-10-02', 80, 'andamento', [
         sub(1, 'Retirar louças dos banheiros', true), sub(2, 'Remover esquadrias de alumínio', true), sub(3, 'Remover pia e bancada da cozinha', true),
         sub(4, 'Retirar box e acessórios', true), subNao(5, 'Remover porta da cozinha', 'Segurança', 'Aguardando a permissão de trabalho'),
-      ]),
-      atv(4, 'Remoção de entulho', 1, 2, '2026-10-05', '2026-10-06', 100, 'concluida', [], '2026-10-06'),
+      ], null, '2026-09-22'),
+      atv(4, 'Remoção de entulho', 1, 2, '2026-10-05', '2026-10-06', 100, 'concluida', [], '2026-10-06', '2026-10-05', '2026-10-06'),
       atv(5, 'Hidráulica', null, 1, '2026-09-28', '2026-10-23', 0, 'a_fazer'),
       atv(6, 'Tubulação de água fria', 5, 0, '2026-09-28', '2026-10-09', 60, 'andamento', [
         sub(1, 'Prumadas do banheiro', true), sub(2, 'Prumadas da lavanderia', true), sub(3, 'Ramais da cozinha', true),
         sub(4, 'Ramais da área de serviço'), sub(5, 'Teste de pressão'),
-      ]),
-      atv(7, 'Instalação de ralos', 5, 1, '2026-10-05', '2026-10-07', 100, 'concluida', [], '2026-10-07'),
+      ], null, '2026-09-29'),
+      atv(7, 'Instalação de ralos', 5, 1, '2026-10-05', '2026-10-07', 100, 'concluida', [], '2026-10-07', '2026-10-05', '2026-10-07'),
       atv(8, 'Elétrica', null, 2, '2026-10-05', '2026-10-16', 0, 'a_fazer'),
       atv(9, 'Reboco', null, 3, '2026-10-19', '2026-11-06', 0, 'a_fazer'),
       atv(10, 'Acabamento', null, 4, '2026-11-09', '2026-12-11', 0, 'a_fazer'),
@@ -136,12 +137,24 @@ export const planejamentoDeExemplo = {
       // Prazo de uma semana que já passou e ainda aberta: cai na coluna "Atrasadas".
       rest(7, 3, 'Liberação da permissão de trabalho para remover esquadrias altas', 'Segurança', '2026-10-02', 'Rafael (Segurança)'),
     ],
+    // Linha de base salva em 10/09: as datas originais. Louças, tubulação, elétrica, reboco e acabamento escorregaram 2 dias úteis.
+    baseline: {
+      salvaEm: '2026-09-10',
+      itens: [
+        { id: 1, inicio: '2026-09-14', fim: '2026-10-06' }, { id: 2, inicio: '2026-09-14', fim: '2026-09-25' },
+        { id: 3, inicio: '2026-09-21', fim: '2026-09-30' }, { id: 4, inicio: '2026-10-05', fim: '2026-10-06' },
+        { id: 5, inicio: '2026-09-28', fim: '2026-10-21' }, { id: 6, inicio: '2026-09-28', fim: '2026-10-07' },
+        { id: 7, inicio: '2026-10-05', fim: '2026-10-07' }, { id: 8, inicio: '2026-10-05', fim: '2026-10-14' },
+        { id: 9, inicio: '2026-10-19', fim: '2026-11-04' }, { id: 10, inicio: '2026-11-09', fim: '2026-12-09' },
+        { id: 11, inicio: '2026-11-09', fim: '2026-11-25' }, { id: 12, inicio: '2026-11-23', fim: '2026-12-09' },
+      ],
+    },
     calendario: calendarioPadrao(),
   },
   T405: {
     atividades: [
       atv(1, 'Preparação da área', null, 0, '2026-10-01', '2026-10-06', 0, 'a_fazer'),
-      atv(2, 'Isolamento e sinalização', 1, 0, '2026-10-01', '2026-10-06', 100, 'concluida', [], '2026-10-02'),
+      atv(2, 'Isolamento e sinalização', 1, 0, '2026-10-01', '2026-10-06', 100, 'concluida', [], '2026-10-02', '2026-10-01', '2026-10-02'),
       atv(3, 'Remoção de revestimento', null, 1, '2026-10-05', '2026-10-16', 0, 'a_fazer'),
     ],
     restricoes: [

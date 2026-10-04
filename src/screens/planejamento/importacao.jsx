@@ -36,6 +36,20 @@ function LinhaComErro({ it, onMudar, onRemover }) {
           {it.erros.termino && <div className="erro" role="alert">{it.erros.termino}{it.erros.termino.startsWith('Data') && it.termino ? ` Veio: "${it.termino}".` : ''}</div>}
         </div>
       </div>
+      {(it.erros.inicioReal || it.erros.fimReal) && (
+        <div className="imp-campos reais">
+          <div className="field">
+            <label htmlFor={`${id}-ireal`}>Início real</label>
+            <input id={`${id}-ireal`} className="input" type="date" value={it.isoInicioReal || ''} onChange={(e) => onMudar(it.chave, { inicioReal: formatarDataBr(e.target.value) })} />
+            {it.erros.inicioReal && <div className="erro" role="alert">{it.erros.inicioReal}{it.inicioReal ? ` Veio: "${it.inicioReal}".` : ''}</div>}
+          </div>
+          <div className="field">
+            <label htmlFor={`${id}-freal`}>Término real</label>
+            <input id={`${id}-freal`} className="input" type="date" value={it.isoFimReal || ''} onChange={(e) => onMudar(it.chave, { fimReal: formatarDataBr(e.target.value) })} />
+            {it.erros.fimReal && <div className="erro" role="alert">{it.erros.fimReal}{it.erros.fimReal.startsWith('Término real inválido') && it.fimReal ? ` Veio: "${it.fimReal}".` : ''}</div>}
+          </div>
+        </div>
+      )}
     </li>
   )
 }
@@ -49,6 +63,7 @@ function LinhaCerta({ it }) {
       </div>
       <div className="eap-meta mono">
         {formatarDataBr(it.isoInicio)} → {formatarDataBr(it.isoFim)} · {textoDiasUteis(it.duracaoUteis)}
+        {(it.isoInicioReal || it.isoFimReal) && <> · real: {formatarDataBr(it.isoInicioReal) || '—'} → {formatarDataBr(it.isoFimReal) || 'em andamento'}</>}
         {it.duracao && !/^\d+ ?(dias?)?$/i.test(it.duracao) ? '' : ''}
       </div>
     </li>

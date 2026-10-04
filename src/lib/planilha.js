@@ -76,14 +76,15 @@ export async function gerarModelo(cal = calendarioPadrao()) {
   for (let r = EXEMPLOS_MODELO.length + 1; r <= LINHAS_DE_TEXTO_NO_MODELO; r++) {
     aba[XLSX.utils.encode_cell({ r, c: 0 })] = { t: 's', v: '', z: '@' }
   }
-  aba['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: LINHAS_DE_TEXTO_NO_MODELO, c: 4 } })
-  aba['!cols'] = [{ wch: 10 }, { wch: 44 }, { wch: 14 }, { wch: 14 }, { wch: 16 }]
+  aba['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: LINHAS_DE_TEXTO_NO_MODELO, c: COLUNAS_MODELO.length - 1 } })
+  aba['!cols'] = [{ wch: 10 }, { wch: 44 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 }]
 
   const instrucoes = XLSX.utils.aoa_to_sheet([
     ['Como preencher'],
     ['ITEM: o código da atividade. 1 é de topo; 1.1 é filho do 1; 1.1.1 é filho do 1.1. A coluna já está como texto.'],
     ['Atividade: o nome. Início e Término: datas no formato DD/MM/AAAA.'],
     ['Duração (Dias): pode deixar em branco; o app calcula em dias úteis pela diferença das datas.'],
+    ['Início Real e Término Real: opcionais (DD/MM/AAAA). Com término real a atividade entra como concluída; só com início real, em andamento.'],
     ['Todo item filho precisa do pai na planilha (2.1 exige o 2).'],
   ])
   const pasta = XLSX.utils.book_new()

@@ -2,12 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { useDados } from './DadosContext.jsx'
 import {
   arquivarAtividadeDaObra, importarAtividades, listarPlanejamento, reprogramarRestricaoDaObra, resolverRestricaoDaObra, salvarAtividade,
-  salvarCalendario, salvarRestricao, substituirAtividade,
+  salvarBaseline, salvarCalendario, salvarRestricao, substituirAtividade,
 } from './dados.js'
 
 const Ctx = createContext(null)
-const VAZIO = { status: 'carregando', atividades: [], restricoes: [], calendario: null }
-const doBanco = (data) => ({ status: 'pronto', atividades: data.atividades, restricoes: data.restricoes || [], calendario: data.calendario })
+const VAZIO = { status: 'carregando', atividades: [], restricoes: [], baseline: null, calendario: null }
+const doBanco = (data) => ({
+  status: 'pronto', atividades: data.atividades, restricoes: data.restricoes || [], baseline: data.baseline || null, calendario: data.calendario,
+})
 
 // UM estado só para o módulo inteiro: as quatro abas leem e gravam a mesma lista de atividades,
 // então uma mudança numa aba aparece nas outras sem ninguém avisar ninguém.
@@ -44,7 +46,7 @@ export function PlanejamentoProvider({ children }) {
   }
 
   const valor = {
-    obra, hoje, status: estado.status, atividades: estado.atividades, restricoes: estado.restricoes, calendario: estado.calendario, tentarDeNovo,
+    obra, hoje, status: estado.status, atividades: estado.atividades, restricoes: estado.restricoes, baseline: estado.baseline, calendario: estado.calendario, tentarDeNovo,
     salvarAtividade: (campos, id) => gravar(() => salvarAtividade(obra, campos, id)),
     arquivarAtividade: (id, arquivada) => gravar(() => arquivarAtividadeDaObra(obra, id, arquivada)),
     importarAtividades: (lista, modo) => gravar(() => importarAtividades(obra, lista, modo)),
@@ -52,6 +54,7 @@ export function PlanejamentoProvider({ children }) {
     resolverRestricao: (id, resolvida) => gravar(() => resolverRestricaoDaObra(obra, id, resolvida, hoje)),
     reprogramarRestricao: (id, prazo) => gravar(() => reprogramarRestricaoDaObra(obra, id, prazo)),
     substituirAtividade: (atividade) => gravar(() => substituirAtividade(obra, atividade)),
+    salvarBaseline: () => gravar(() => salvarBaseline(obra, hoje)),
     salvarCalendario: (calendario) => gravar(() => salvarCalendario(obra, calendario)),
   }
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>
