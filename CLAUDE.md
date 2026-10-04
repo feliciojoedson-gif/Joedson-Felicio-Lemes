@@ -20,7 +20,7 @@ Uma pergunta decide: **"isto continuaria verdade se a tela fosse outra?"**
 
 - **Sim → `src/lib/*.js`.** Regra pura (semáforo, planejado, permissões, ordenação). Sem React, sem banco, sem `window`. Roda no Node sem bundler (import com `.js` explícito). É a única camada com teste.
 - **Não → `src/screens/*.jsx`.** Layout e estado de interface. A tela **pede a decisão à lib**; não decide.
-- `src/lib/dados.js` — **única porta dos dados.** Hoje lê `src/lib/mock.js`; depois o Supabase. Nenhuma tela chama o mock nem o Supabase direto.
+- `src/lib/dados.js` — **única porta dos dados** (Supabase, via `src/lib/supabase.js`). Nenhuma tela chama o Supabase direto. `src/lib/mock.js` virou massa de teste de `tests/regras.mjs`: nenhuma tela o importa.
 - `if` de negócio dentro de tela vai para `lib`, mesmo com três linhas. Constante compartilhada (status, perfis, disciplinas, motivos) tem um dono só: `regras.js`.
 - O vocabulário de `regras.js` tem que ser **idêntico** ao CHECK do banco (com acento).
 
@@ -36,7 +36,7 @@ Nada disso prova que a tela funciona: verde com a tela em branco é rotina. Olhe
 
 ## Antes de subir pro GitHub
 
-Diff que toca em `src/lib/supabase.js`, `src/lib/dados.js`, políticas RLS, migrations ou fluxo de dinheiro (medições) → rodar a revisão de código (`/code-review` no Claude Code, `/review` no Codex) antes de subir. É por caminho, não por julgamento: nesses arquivos o erro não aparece na tela.
+Diff que toca em `src/lib/supabase.js`, `src/lib/dados.js`, `src/App.jsx` (sessão), políticas RLS, migrations, Storage ou fluxo de dinheiro (medições) → rodar a revisão de código (`/code-review` no Claude Code, `/review` no Codex) antes de subir. É por caminho, não por julgamento: nesses arquivos o erro não aparece na tela.
 
 ## Deploy
 
@@ -44,8 +44,11 @@ Ainda não há. Padrão: a pessoa diz "sobe pro GitHub", o agente sobe com git, 
 
 ## Armadilhas desta base
 
-- **Hoje não há banco.** O login da `Login.jsx` é um seletor de perfis de teste, e salvar não grava nada (formulários mostram um aviso). Não confunda isso com bug.
-- A data "hoje" do mock é fixa (`HOJE` em `mock.js`, 04/10/2026) para os exemplos baterem com o PRD. Troque por `new Date()` na virada para o banco.
+- **Banco:** projeto Supabase `kaefer-rip` (`rbqzyxyneuqbeyvjdzom`, São Paulo). Chaves em `.env.local` (fora do git; modelo em `.env.example`). Migrations em `supabase/migrations/` e testes de RLS em `supabase/tests/*.sql` (cada um termina em erro `RELATORIO` de propósito, para não gravar nada).
+- **Login é real** (email e senha). Conta nova nasce `Pendente`; o primeiro Coordenador é promovido à mão no banco, depois do cadastro. O **Diário grava de verdade** (lançamento e fotos, com os gatilhos do banco). Os demais formulários (frentes, medições, restrições, administração) **ainda não gravam** e mostram um aviso: não confunda isso com bug.
+- Quem decide o que cada perfil lê é a **RLS**, não o `dados.js`. Mudou permissão: mude a policy, `regras.js` (menu e botões) e `supabase/tests/rls.sql` no mesmo lote.
+- A virada diária roda no banco (`pg_cron`, 09h UTC = 06h de Brasília). Sem registro `ok` na `auditoria` depois das 7h, o Painel avisa.
+- Data "hoje" = `hojeEmBrasilia()` (`regras.js`).
 - "A medir" = frente `Concluída` sem medição `Enviada`/`Aprovada` (um `Rascunho` não conta como medida).
 - Semáforo da obra usa os mesmos limites da frente aplicados ao desvio da obra (-5 e -10); o plano não definia isso.
 - O Cliente recebe frentes **sem** responsável, dias sem avanço, impacto nem data de decisão: o recorte está em `dados.js` (no banco, será a RLS/view).

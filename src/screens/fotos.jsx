@@ -30,7 +30,7 @@ export default function Fotos() {
             <div className="photos grade">
               {lista.map((x) => (
                 <button key={x.id} className="photo" onClick={() => setAberta(x)} aria-label={x.legenda}>
-                  <Icone nome="fotos" />
+                  {x.link ? <img src={x.link} alt={x.legenda} loading="lazy" /> : <Icone nome="fotos" />}
                   <span className="cap">{formatarDataCurta(x.tirada_em.slice(0, 10))} · {nomeDaFrente(x.frente_id)}</span>
                 </button>
               ))}
@@ -39,7 +39,7 @@ export default function Fotos() {
       </div>
       {aberta && (
         <Modal onFechar={() => setAberta(null)}>
-          <div className="photo"><Icone nome="fotos" tamanho={56} /></div>
+          <div className="photo">{aberta.link ? <img src={aberta.link} alt={aberta.legenda} /> : <Icone nome="fotos" tamanho={56} />}</div>
           <p style={{ margin: '0 0 6px', fontWeight: 800 }}>{aberta.legenda}</p>
           <p className="mono" style={{ margin: '0 0 12px' }}>{formatarData(aberta.tirada_em.slice(0, 10))} · {nomeDaFrente(aberta.frente_id)}</p>
         </Modal>

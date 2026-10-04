@@ -26,7 +26,7 @@ Liga o login à pessoa e guarda o perfil dela. É ela que manda nas permissões.
 | auth_uid | uuid | sim | vem do login, único |
 | nome | text | sim | |
 | email | text | sim | único |
-| role | text | sim | CHECK: `Coordenador`, `Planejamento`, `Engenharia`, `Produção`, `Cliente`, `Diretoria`, `Pendente` |
+| role | text | sim | CHECK: `Coordenador`, `Planejamento`, `Engenharia`, `Produção`, `Medição`, `Custos e Controle`, `Gestão Contratual`, `Cliente`, `Diretoria`, `Administrador`, `Pendente` |
 | ativo | boolean | sim | padrão verdadeiro |
 | created_at | timestamptz | sim | automático |
 
@@ -41,12 +41,14 @@ Para que serve: cada contrato, separado dos demais.
 | Campo | Tipo | Obrigatório | Observação |
 |---|---|---|---|
 | id | int8 | sim | chave |
+| codigo | text | sim | sigla curta, única (ex.: `U12`); mostrada no seletor de obra |
 | nome | text | sim | |
+| endereco | text | não | |
 | cliente | text | sim | |
 | numero_contrato | text | não | |
 | data_inicio | date | sim | |
 | data_fim_contratual | date | sim | não pode ser anterior ao início |
-| status | text | sim | CHECK: `Em andamento`, `Concluída`, `Suspensa` |
+| status | text | sim | CHECK: `Planejamento`, `Ativa`, `Suspensa`, `Encerrada`, `Arquivada` |
 | responsavel_id | int8 | não | liga a `profiles` |
 | created_at | timestamptz | sim | automático |
 
@@ -168,7 +170,7 @@ Para que serve: o que foi medido de cada frente em cada mês.
 | unidade | text | sim | |
 | percentual_medido | numeric(5,2) | sim | de 0 a 100 |
 | valor_medido | numeric(14,2) | sim | |
-| status | text | sim | CHECK: `Rascunho`, `Enviada`, `Aprovada` |
+| status | text | sim | CHECK: `Rascunho`, `Enviada`, `Aprovada pela Gestão`, `Aprovada` |
 | evidencia_url | text | não | link do Storage |
 | observacao | text | não | |
 | created_at | timestamptz | sim | automático |
@@ -205,53 +207,93 @@ Para que serve: o que está travando ou ameaçando uma frente, incluindo RFI, ri
 
 ---
 
+## Tabela `auditoria`
+
+Para que serve: trilha de quem alterou o quê e quando. Preenchida só por gatilho; ninguém grava, edita nem apaga à mão.
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| id | int8 | sim | chave |
+| obra_id | int8 | não | vazio só para mudanças em `profiles` |
+| tabela | text | sim | nome da tabela alterada |
+| registro_id | int8 | sim | |
+| acao | text | sim | CHECK: `Criou`, `Alterou`, `Apagou` |
+| usuario_id | int8 | não | liga a `profiles`; vazio nos processos automáticos |
+| perfil | text | não | perfil da pessoa no momento |
+| campo | text | não | vazio em `Criou` e `Apagou` |
+| valor_anterior | text | não | |
+| valor_novo | text | não | |
+| justificativa | text | não | |
+| created_at | timestamptz | sim | automático (data e hora) |
+
+**Gatilhos em:** `obras`, `obra_membros`, `frentes`, `medicoes`, `restricoes`, `profiles` (uma linha por campo alterado). Não audita `apontamentos` e `fotos` na v1: já carregam autor e data.
+**Índices úteis:** `obra_id` + `created_at`, `tabela` + `registro_id`.
+
+---
+
 ## Permissões
 
-Escrito em português. Vira RLS na hora de construir. Regra geral: quem não está em `obra_membros` de uma obra não vê nada dela, exceto Coordenador e Diretoria, que veem todas. Perfil `Pendente` e perfil inativo não veem nada.
+Escrito em português. Vira RLS na hora de construir. Decisões do dono (04/10/2026): **10 perfis desde a v1**; **Cliente não vê valor de medição**; **só o Coordenador apaga** (o perfil `Coordenador` é o mesmo de Gerente de Contrato e Gerente de Filial); **o Coordenador (Gerente de Contrato, Gerente de Filial) cria obras, libera contas, troca perfis e vincula pessoas**; o `Administrador` só lê tudo, para suporte, e não grava nada. Medição **não** aprova a própria medição. A trilha de auditoria entra já na primeira migration.
+
+Regra geral: quem não está em `obra_membros` de uma obra não vê nada dela, exceto `Coordenador`, `Diretoria` e `Administrador`, que veem todas. Perfil `Pendente` e perfil inativo não veem nada.
+
+Perfis: `Coordenador`, `Planejamento`, `Engenharia`, `Produção`, `Medição`, `Custos e Controle`, `Gestão Contratual`, `Cliente`, `Diretoria`, `Administrador`.
+
+Os módulos de Custos, EAC, Curva S, SPI, CPI, EAP, pleitos completos e correspondências **não têm tabela na v1**: EAC, Curva S, SPI e CPI são calculados a partir das tabelas existentes (camada analítica). Os perfis `Custos e Controle` e `Gestão Contratual` existem desde já, mas só enxergam o que está nas 8 tabelas abaixo.
 
 ### `profiles`
-- **Ver:** cada pessoa vê o próprio registro; o Coordenador vê todos; os demais perfis veem nome e perfil das pessoas das suas obras, para mostrar o responsável (Cliente não vê pessoas internas).
+- **Ver:** cada pessoa vê o próprio registro; Coordenador e Administrador veem todos; os demais perfis veem nome e perfil das pessoas das suas obras (Cliente não vê pessoas internas).
 - **Criar:** automático, no cadastro, com perfil `Pendente`.
-- **Editar:** o Coordenador troca perfil e ativo; cada pessoa edita só o próprio nome.
+- **Editar:** só o Coordenador troca perfil e ativo; cada pessoa edita só o próprio nome.
 - **Apagar:** ninguém. Pessoa que sai é desativada.
+- O primeiro Coordenador é promovido à mão no banco, depois que a pessoa se cadastrar (`UPDATE` único, fora do git; nenhum email pessoal entra em migration).
 
 ### `obras`
-- **Ver:** Coordenador e Diretoria todas; os demais só as obras em que são membros.
-- **Criar, editar, apagar:** só o Coordenador.
+- **Ver:** Coordenador, Diretoria e Administrador todas; os demais só as obras em que são membros.
+- **Criar e editar:** só o Coordenador.
+- **Apagar:** ninguém. A obra encerra mudando o status (`Suspensa`, `Encerrada`, `Arquivada`).
 
 ### `obra_membros`
-- **Ver:** Coordenador e Diretoria todos; os demais veem só as próprias linhas.
+- **Ver:** Coordenador, Diretoria e Administrador todos; os demais veem só as próprias linhas.
 - **Criar, editar, apagar:** só o Coordenador.
 
 ### `frentes`
-- **Ver:** Coordenador e Diretoria todas; Planejamento, Engenharia e Produção as das suas obras; Cliente as das suas obras, mas só nome, local, disciplina, datas planejadas, percentual realizado e se é marco (a tela do cliente não pode ler responsável, dias sem avanço, impacto no prazo nem data de decisão).
-- **Criar:** Coordenador e Planejamento.
-- **Editar:** Coordenador e Planejamento editam nome, datas, peso, responsável, marco, impacto e data de decisão. Os campos `percentual_realizado`, `ultimo_avanco_em`, `dias_sem_avanco`, `status` e `saude` só mudam pelos processos automáticos.
+- **Ver:** Coordenador, Diretoria e Administrador todas; Planejamento, Engenharia, Produção, Medição, Custos e Controle e Gestão Contratual as das suas obras; Cliente as das suas obras, mas só nome, local, disciplina, datas planejadas, percentual realizado e se é marco.
+- **Criar e editar:** Coordenador e Planejamento (nome, datas, peso, responsável, marco, impacto e data de decisão). `percentual_realizado`, `ultimo_avanco_em`, `dias_sem_avanco`, `status` e `saude` só mudam pelos processos automáticos.
 - **Apagar:** só o Coordenador.
 
 ### `apontamentos`
-- **Ver:** Coordenador e Diretoria todos; Planejamento os das suas obras; Produção só os que ela mesma lançou; Engenharia vê os lançamentos sem o campo de efetivo; Cliente não vê nenhum.
+- **Ver:** Coordenador, Diretoria e Administrador todos; Planejamento, Medição e Custos e Controle os das suas obras; Produção só os que ela lançou; Engenharia sem o campo de efetivo; Cliente e Gestão Contratual não veem.
 - **Criar:** Coordenador e Produção (nas frentes das suas obras).
-- **Editar:** o autor, no mesmo dia do lançamento; Coordenador sempre.
+- **Editar:** o autor, no mesmo dia; Coordenador sempre.
 - **Apagar:** só o Coordenador.
 
 ### `fotos`
-- **Ver:** Coordenador, Diretoria, Planejamento, Engenharia e Produção veem as das suas obras; Cliente só as com `visivel_cliente` verdadeiro, nas suas obras.
+- **Ver:** todos os perfis internos, nas suas obras (Custos e Controle não); Cliente só as com `visivel_cliente` verdadeiro.
 - **Criar:** Coordenador e Produção.
-- **Editar:** o Coordenador altera legenda e `visivel_cliente`; ninguém mais edita.
+- **Editar:** só o Coordenador (legenda e `visivel_cliente`).
 - **Apagar:** só o Coordenador.
 
 ### `medicoes`
-- **Ver:** só Coordenador e Diretoria.
-- **Criar e editar:** só o Coordenador.
+- **Ver tudo, com valor:** Coordenador, Diretoria, Administrador, e (nas suas obras) Planejamento, Medição, Custos e Controle e Gestão Contratual.
+- **Cliente:** só medições `Aprovada` (final), **sem** `valor_medido` (vai por view). Engenharia e Produção não têm acesso.
+- **Criar e editar:** Coordenador e Medição, até o status `Enviada`.
+- **Aprovação em duas etapas, na ordem:** Medição cria e envia (`Rascunho` → `Enviada`); a **Gestão Contratual** aprova (`Aprovada pela Gestão`); o **Coordenador** dá a aprovação final (`Aprovada`). Ninguém pula etapa e a Medição não aprova a própria; quem aprova só muda o status e a observação. A regra mora num gatilho do banco (`medicoes_protege`). As etapas antes da Medição (Produção → Coordenador Operacional → Engenharia → Planejamento) ficam na v2: não são status.
 - **Apagar:** só o Coordenador.
-- Planejamento, Engenharia, Produção e Cliente não têm nenhum acesso, nem de leitura.
 
 ### `restricoes`
-- **Ver:** Coordenador e Diretoria todas, de todos os tipos; Planejamento, Engenharia e Produção veem tipos `Restrição` e `RFI` das suas obras; Cliente não vê nenhuma.
-- **Criar:** Coordenador cria qualquer tipo; Planejamento, Engenharia e Produção criam só `Restrição` e `RFI`.
-- **Editar:** Coordenador edita todas; Engenharia edita `Restrição` e `RFI`; Produção e Planejamento editam só as que criaram.
+- **Ver:** Coordenador, Diretoria, Administrador e Gestão Contratual todos os tipos; Planejamento, Engenharia e Produção os tipos `Restrição` e `RFI`, nas suas obras; Medição, Custos e Controle e Cliente nenhum.
+- **Criar:** Coordenador qualquer tipo; Gestão Contratual `Risco` e `Pleito potencial`; Planejamento, Engenharia e Produção só `Restrição` e `RFI`.
+- **Editar:** Coordenador todas; Gestão Contratual `Risco` e `Pleito potencial`; Engenharia `Restrição` e `RFI`; Produção e Planejamento só as que criaram.
 - **Apagar:** só o Coordenador.
+
+### Administrador, em geral
+- Lê todas as tabelas, inclusive `auditoria`. **Não grava** em nenhuma.
+
+### `auditoria`
+- **Ver:** Coordenador, Diretoria e Administrador todas; Gestão Contratual as das suas obras. Os demais não veem.
+- **Criar:** só por gatilho do banco, em `medicoes`, `restricoes`, `frentes`, `obras`, `obra_membros` e `profiles`. Ninguém insere, edita nem apaga à mão.
+- Campos e gatilhos estão na seção da tabela `auditoria`, acima das permissões.
 
 ### Storage (fotos e evidências)
 - Quem pode ler o arquivo é quem pode ler a linha que aponta para ele. Foto de obra que a pessoa não vê não pode abrir pelo link direto.
@@ -272,6 +314,7 @@ Escrito em português. Vira RLS na hora de construir. Regra geral: quem não est
 - **Gatilho:** todo dia às 06h00.
 - **Passos:** 1. Para cada frente `Em andamento`, calcular os dias corridos desde `ultimo_avanco_em` e gravar em `dias_sem_avanco`. 2. Passar para `Parada` as que têm 3 dias ou mais. 3. Recalcular `saude`: `Vermelho` se desvio de -10 pontos ou pior, ou `Parada`; `Amarelo` se desvio entre -5 e -10, ou 1 a 2 dias sem avanço, ou `Não iniciada` com planejado maior que zero; senão `Verde`. O planejado de hoje é a reta entre início e fim planejados.
 - **Resultado:** o Painel de manhã mostra os números do dia.
+- **Registro:** cada execução grava uma linha em `auditoria` (`tabela` = `virada_diaria`, resultado `ok` ou `falhou`). Às 06h30 uma conferência grava `nao_executou` se não houve `ok` no dia.
 - **Se falhar:** grava o erro e a hora; o Painel mostra "A atualização das frentes de hoje não rodou. Os números são de ontem." O Coordenador consegue pedir para rodar de novo, e não há outro aviso por fora do sistema na v1.
 
 ### Diário que fecha a frente
@@ -282,7 +325,7 @@ Escrito em português. Vira RLS na hora de construir. Regra geral: quem não est
 
 ## Arquivos
 
-- Guardados no Storage, na pasta `fotos` (fotos do diário) e na pasta `evidencias` (evidências de medição).
+- Guardados no Storage, em dois buckets privados: `fotos` (até 5 MB, JPEG/PNG/WebP) e `evidencias` (até 10 MB, imagem ou PDF). Caminho: `<obra_id>/<frente_id>/<arquivo>`; o banco guarda esse caminho e a tela abre por link assinado.
 - Imagem comprimida no navegador antes de subir (máx. 1200px, qualidade 0.8).
 - O banco guarda `url` e, nas fotos, a obra e a frente a que pertencem.
 
@@ -291,12 +334,16 @@ Escrito em português. Vira RLS na hora de construir. Regra geral: quem não est
 - [ ] Usuário recém-cadastrado não enxerga nenhum dado até ser liberado.
 - [ ] Produção não consegue apagar nada, nem o que é dele, e não lê nenhuma linha de `medicoes`.
 - [ ] Cliente lê só frentes das obras em que é membro, e só os campos permitidos.
-- [ ] Cliente não lê `apontamentos`, `restricoes` nem `medicoes`, e só lê fotos com `visivel_cliente` verdadeiro.
-- [ ] Engenharia e Planejamento não leem `medicoes`.
+- [ ] Cliente não lê `apontamentos` nem `restricoes`, e só lê fotos com `visivel_cliente` verdadeiro.
+- [ ] Engenharia não lê `medicoes`; Planejamento lê, sem gravar.
 - [ ] Planejamento não cria nem edita `apontamentos`, `fotos` e `medicoes`.
 - [ ] Diretoria lê tudo e não grava nada.
 - [ ] Pessoa de uma obra não lê dado de outra obra.
-- [ ] O Coordenador consegue trocar o perfil de qualquer usuário.
+- [ ] O Coordenador troca o perfil de qualquer usuário; o Administrador não grava nada.
+- [ ] Toda alteração em medição, restrição, frente, obra, vínculo e perfil gera linha em `auditoria`, e ninguém edita nem apaga essas linhas.
+- [ ] A medição só anda na ordem Rascunho → Enviada → Aprovada pela Gestão → Aprovada, cada passo pelo perfil certo.
+- [ ] Cliente não lê `valor_medido`; só vê medições `Aprovada`.
+- [ ] Só o Coordenador apaga.
 - [ ] Os valores de status, disciplina, tipo e motivo do banco são idênticos aos da interface.
 - [ ] Todo campo obrigatório recusa cadastro vazio.
 - [ ] Dois lançamentos da mesma frente na mesma data são recusados.

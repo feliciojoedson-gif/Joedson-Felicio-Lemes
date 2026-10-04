@@ -3,10 +3,11 @@ import {
   CabecalhoDaLista, Chip, FrenteItem, FrenteItemCliente, Icone, Seletor, Topo, Vazio,
 } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
+import { rodarAtualizacaoDasFrentes } from '../lib/dados.js'
 import {
   concluidaSemMedicao, DISCIPLINAS, estaParadaHa3Dias, formatarData, formatarDinheiro, menuDoPerfil,
   ordenarFrentes, passaPeriodo, pode, progressoDaObra, restricaoCriticaAberta, rotuloDaObra,
-  semaforoDaObra, semDiarioHoje,
+  semaforoDaObra, semDiarioHoje, viradaAtrasada,
 } from '../lib/regras.js'
 
 const PERIODOS = [['recente', 'Último avanço: até 3 dias'], ['antigo', 'Último avanço: mais de 3 dias']]
@@ -17,6 +18,26 @@ function proximoMarco(obra, frentes, hoje) {
     .sort((a, b) => (a.fim_planejado < b.fim_planejado ? -1 : 1))[0]
   if (marco) return `${marco.nome.replace(/^Marco:\s*/, '')} · ${formatarData(marco.fim_planejado)}`
   return `Término contratual · ${formatarData(obra.data_fim_contratual)}`
+}
+
+// Aviso quando a atualização das 06h não rodou. O Coordenador pode pedir para rodar de novo.
+function AvisoDaAtualizacao() {
+  const { usuario, virada, recarregar } = useDados()
+  const [erro, setErro] = useState('')
+  if (!viradaAtrasada(virada)) return null
+  const rodar = async () => {
+    setErro('')
+    const falha = await rodarAtualizacaoDasFrentes()
+    if (falha) setErro(falha)
+    else recarregar()
+  }
+  return (
+    <div className="pending" role="alert" style={{ marginBottom: 12 }}>
+      A atualização das frentes de hoje não rodou. Os números são de ontem.
+      {pode(usuario.role, 'rodarAtualizacao') && <> <button className="link" onClick={rodar}>Rodar agora</button></>}
+      {erro && <div>{erro}</div>}
+    </div>
+  )
 }
 
 function CartaoDaObra({ mostrarMedicao }) {
@@ -109,6 +130,7 @@ function PainelInterno({ goto }) {
   return (
     <>
       <Topo titulo="Painel" />
+      <AvisoDaAtualizacao />
       <div className="filters">
         <Seletor valor={disc} onTroca={setDisc} rotulo="Disciplina" todas="Todas as disciplinas" opcoes={DISCIPLINAS.map((d) => [d, d])} />
         <Seletor valor={resp} onTroca={setResp} rotulo="Responsável" todas="Todos os responsáveis"

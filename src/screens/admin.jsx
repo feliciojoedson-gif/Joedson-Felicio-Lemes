@@ -3,7 +3,7 @@ import { Aba, Chip, Icone, Topo, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
 import { formatarData, veTodasAsObras } from '../lib/regras.js'
 
-const tomDaObra = { 'Em andamento': 'ok', 'Concluída': 'neutral', 'Parada': 'bad' }
+const tomDaObra = { Planejamento: 'neutral', Ativa: 'ok', Suspensa: 'warn', Encerrada: 'neutral', Arquivada: 'neutral' }
 
 // Administração é cadastro (obras e pessoas), não lançamento: é a única tela que
 // lista todas as obras de uma vez, de propósito.

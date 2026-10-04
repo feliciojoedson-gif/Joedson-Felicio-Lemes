@@ -82,7 +82,7 @@ Cada obra tem suas frentes de serviço. O mestre ou supervisor lança o diário 
 - **Abre em:** duas listas: "A medir" (frentes concluídas ou com avanço ainda não medido) e "Histórico de medições".
 - **Mostra:** obra, frente, mês de referência, quantidade, unidade, percentual medido, valor medido, status e evidência.
 - **Ordem e filtro:** "A medir" por data de conclusão mais antiga; filtros por obra, disciplina, mês e status.
-- **Ações:** criar e editar medição, anexar evidência, enviar, aprovar. Só coordenador cria e edita; diretoria só lê.
+- **Ações:** criar e editar medição, anexar evidência, enviar, aprovar. Coordenador e Medição criam e editam (Medição não aprova); aprovam Coordenador e Gestão Contratual; os demais só leem.
 - **Ao clicar num item:** abre o detalhe da medição com a evidência.
 - **Vazio:** "Nenhuma frente a medir agora."
 - **Nasce e morre:** nasce do botão Medir em uma frente; morre apagada pelo coordenador.
@@ -123,38 +123,30 @@ Cada obra tem suas frentes de serviço. O mestre ou supervisor lança o diário 
 
 ## Perfis de usuário
 
-- **Coordenador de Contrato:** acompanha todas as obras, decide e mede · primeira tela: Painel.
-- **Planejamento:** mantém datas, pesos, responsáveis e marcos das frentes · primeira tela: Painel.
-- **Engenharia:** registra restrições e RFIs, consulta frentes · primeira tela: Restrições.
-- **Produção:** mestre ou supervisor que lança o diário no canteiro · primeira tela: Diário.
-- **Cliente:** acompanha avanço e fotos autorizadas · primeira tela: Painel (versão do cliente).
-- **Diretoria:** lê a carteira, os desvios, as medições e os riscos, sem editar · primeira tela: Painel.
+Decisão do dono em 04/10/2026: **10 perfis já na v1**. A matriz revisada (visualiza/edita/não pode, por perfil) é a fonte; o que vira regra por tabela está em `PRD-BACKEND.md`, seção Permissões.
 
-### Matriz de permissões **[PROPOSTA — pedir confirmação linha a linha nas que mexem com dinheiro e dado de terceiro]**
+- **Coordenador** (inclui Gerente de Contrato e Gerente de Filial): acompanha todas as obras, cria obras, libera contas, decide, aprova e é o único que apaga · primeira tela: Painel.
+- **Planejamento:** mantém datas, pesos, responsáveis e marcos; vê valor de medição, sem editar · primeira tela: Painel.
+- **Engenharia:** restrições, RFIs e pendências; consulta frentes · primeira tela: Restrições.
+- **Produção** (mestre ou encarregado): lança o diário no canteiro · primeira tela: Diário.
+- **Medição:** cria e edita boletins e quantitativos; lê frentes, produção e evidências · primeira tela: Medições.
+- **Custos e Controle:** lê medições, produtividade e frentes; módulo de custos fica na v2 · primeira tela: Painel.
+- **Gestão Contratual:** pleitos e riscos; lê medições e evidências; aprova medição · primeira tela: Restrições.
+- **Cliente:** avanço, fotos liberadas e medições aprovadas, **sem valor** · primeira tela: Painel (versão do cliente).
+- **Diretoria:** lê a carteira de todas as obras, sem editar · primeira tela: Painel.
+- **Administrador:** leitura de tudo, para suporte; não grava nada · primeira tela: Painel.
 
-| Ação | Coordenador | Planejamento | Engenharia | Produção | Cliente | Diretoria |
-|---|---|---|---|---|---|---|
-| Ver obras e frentes das obras a que está ligado | sim, todas | sim | sim | sim | só avanço e datas aprovadas | sim, todas |
-| Ver valores de medição | sim | não | não | não | não | sim |
-| Ver restrições, riscos e pleitos | sim | só restrições e RFIs | só restrições e RFIs | só restrições e RFIs | não | sim |
-| Ver efetivo e produtividade interna | sim | sim | não | só o que lançou | não | sim |
-| Ver fotos | todas | todas | todas | todas | só as marcadas para o cliente | todas |
-| Lançar diário | sim | não | não | sim | não | não |
-| Editar frentes (datas, peso, responsável) | sim | sim | não | não | não | não |
-| Criar restrição | sim | sim | sim | sim | não | não |
-| Criar medição | sim | não | não | não | não | não |
-| Apagar qualquer registro | sim | não | não | não | não | não |
-| Gerenciar usuários e obras | sim | não | não | não | não | não |
+Decisões confirmadas:
+1. Cliente **não** vê valor de medição (vê só as aprovadas, sem R$).
+2. **Só o Coordenador apaga** qualquer registro operacional.
+3. **O Coordenador** cria obras, libera contas, troca perfis e vincula pessoas. O Administrador só lê.
+6. Obras nunca são apagadas; o status é Planejamento, Ativa, Suspensa, Encerrada ou Arquivada.
+7. Medição prepara e envia, mas não aprova. Aprovação em duas etapas, nesta ordem: Gestão Contratual, depois o Coordenador.
+8. A trilha de auditoria (9ª tabela) entra já na primeira migration.
+4. Planejamento passa a ver valor de medição (antes não).
+5. Diretoria vê tudo, incluindo valor medido, e não edita.
 
-Padrão por trás: quem cria edita o que é seu, e só o coordenador apaga.
-
-**Leitura em voz alta para confirmar:**
-1. Pelo que escrevi, **produção não enxerga nenhum valor de medição**. Confirma?
-2. **Cliente nunca vê restrição, risco ou pleito**, nem efetivo. Confirma?
-3. **Planejamento não vê valor de medição.** Confirma?
-4. **Diretoria vê tudo, incluindo valor medido, mas não edita.** Confirma?
-5. **Produção vê restrições do tipo Restrição e RFI**, mas não Risco nem Pleito potencial. Confirma?
-6. Quem dessa tabela você não confiaria para apagar um registro? (Hoje só o coordenador apaga.)
+O primeiro Coordenador é promovido à mão no banco depois do cadastro; nenhum email pessoal vai para o código.
 
 ## Fluxo de cadastro
 
@@ -293,7 +285,7 @@ Para que serve: cada contrato, separado dos demais.
 | numero_contrato | text | não | |
 | data_inicio | date | sim | |
 | data_fim_contratual | date | sim | |
-| status | text | sim | `Em andamento`, `Concluída`, `Suspensa` |
+| status | text | sim | `Planejamento`, `Ativa`, `Suspensa`, `Encerrada`, `Arquivada` |
 | responsavel_id | int8 | não | liga a `profiles` |
 | created_at | timestamptz | sim | |
 
@@ -430,7 +422,7 @@ Dados que passam a ser guardados desde o primeiro dia para responder: histórico
 
 ## Cortes possíveis
 
-Resumo da v1: 9 telas, 8 tabelas, 2 processos, 6 perfis. Passa dos tetos de 6 telas e 7 tabelas. Para voltar ao limite:
+Resumo da v1: 9 telas, 9 tabelas (8 de negócio + `auditoria`), 2 processos, 10 perfis. Passa dos tetos de 6 telas e 7 tabelas. Para voltar ao limite:
 - **Corte A:** tirar a tela Fotos (as fotos continuam no Detalhe da frente). Fica 8 telas.
 - **Corte B:** juntar Restrições dentro do Detalhe da frente e do Painel. Fica 7 telas e 7 tabelas, se `restricoes` virar campo de frente.
 - **Corte C:** tirar o perfil Diretoria da v1 (o coordenador mostra o Painel nas reuniões).

@@ -5,7 +5,7 @@ import {
   concluidaSemMedicao, DISCIPLINAS, formatarData, formatarDinheiro, formatarMes, pode,
 } from '../lib/regras.js'
 
-const tomDoStatus = { Rascunho: 'pending', Enviada: 'pending', Aprovada: 'done' }
+const tomDoStatus = { Rascunho: 'pending', Enviada: 'pending', 'Aprovada pela Gestão': 'pending', Aprovada: 'done' }
 
 export default function Medicoes({ avisar }) {
   const { usuario, frentes, medicoes } = useDados()

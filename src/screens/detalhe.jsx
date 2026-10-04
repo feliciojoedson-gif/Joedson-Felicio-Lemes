@@ -85,7 +85,7 @@ export default function Detalhe({ goto, params, avisar, de }) {
             <div className="photos">
               {fotosDaFrente.map((x) => (
                 <button key={x.id} className="photo" onClick={() => setFoto(x)} aria-label={x.legenda}>
-                  <Icone nome="fotos" />
+                  {x.link ? <img src={x.link} alt={x.legenda} loading="lazy" /> : <Icone nome="fotos" />}
                   <span className="cap">{formatarDataCurta(x.tirada_em.slice(0, 10))}{x.visivel_cliente ? ' · cliente' : ''}</span>
                 </button>
               ))}
@@ -143,7 +143,7 @@ export default function Detalhe({ goto, params, avisar, de }) {
 
       {foto && (
         <Modal onFechar={() => setFoto(null)}>
-          <div className="photo"><Icone nome="fotos" tamanho={56} /></div>
+          <div className="photo">{foto.link ? <img src={foto.link} alt={foto.legenda} /> : <Icone nome="fotos" tamanho={56} />}</div>
           <p style={{ margin: '0 0 6px', fontWeight: 800 }}>{foto.legenda}</p>
           <p className="mono" style={{ margin: '0 0 12px' }}>{formatarData(foto.tirada_em.slice(0, 10))}{foto.visivel_cliente ? ' · liberada para o cliente' : ''}</p>
           {pode(role, 'liberarFoto') && (

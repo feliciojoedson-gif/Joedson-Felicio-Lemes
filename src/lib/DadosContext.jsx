@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { carregarBase } from './dados.js'
+import { carregarBase, salvarLancamento } from './dados.js'
 
 const Ctx = createContext(null)
 
@@ -25,6 +25,7 @@ function guardarObra(usuario, id) {
 export function DadosProvider({ usuario, children }) {
   const [obraId, setObraId] = useState(() => lerObraGuardada(usuario))
   const [estado, setEstado] = useState({ erro: null, base: null })
+  const [rodada, setRodada] = useState(0)
 
   useEffect(() => {
     let vivo = true
@@ -34,14 +35,20 @@ export function DadosProvider({ usuario, children }) {
       setEstado({ erro, base: data })
     })
     return () => { vivo = false }
-  }, [usuario, obraId])
+  }, [usuario, obraId, rodada])
 
   if (estado.erro) return <div className="login"><p>Não consegui carregar. Tente de novo.</p></div>
   if (!estado.base) return <div className="login"><p className="mono">Carregando…</p></div>
 
   const nomeDe = (id) => estado.base.perfis.find((p) => p.id === id)?.nome || null
   const trocarObra = (id) => setObraId(Number(id))
-  return <Ctx.Provider value={{ usuario, ...estado.base, nomeDe, trocarObra }}>{children}</Ctx.Provider>
+  const recarregar = () => setRodada((n) => n + 1)
+  const lancarDiario = async (frente, campos, existente) => {
+    const resultado = await salvarLancamento(usuario, frente, estado.base.hoje, campos, existente)
+    if (!resultado.erro) recarregar()
+    return resultado
+  }
+  return <Ctx.Provider value={{ usuario, ...estado.base, nomeDe, trocarObra, recarregar, lancarDiario }}>{children}</Ctx.Provider>
 }
 
 export const useDados = () => useContext(Ctx)

@@ -17,8 +17,8 @@ export const perfis = [
 ]
 
 export const obras = [
-  { id: 1, nome: 'Parada Geral Unidade 12', codigo: 'U12', endereco: 'Rodovia BR-101, km 12 — Zona Industrial (exemplo)', cliente: 'Petroquímica Exemplo', numero_contrato: 'PE-0412', data_inicio: '2026-09-01', data_fim_contratual: '2026-10-30', status: 'Em andamento', responsavel_id: 1 },
-  { id: 2, nome: 'Montagem Tanque T-405', codigo: 'T405', endereco: 'Av. do Aço, 800 — Distrito Siderúrgico (exemplo)', cliente: 'Siderúrgica Exemplo', numero_contrato: 'SE-0877', data_inicio: '2026-08-01', data_fim_contratual: '2026-11-30', status: 'Em andamento', responsavel_id: 1 },
+  { id: 1, nome: 'Parada Geral Unidade 12', codigo: 'U12', endereco: 'Rodovia BR-101, km 12 — Zona Industrial (exemplo)', cliente: 'Petroquímica Exemplo', numero_contrato: 'PE-0412', data_inicio: '2026-09-01', data_fim_contratual: '2026-10-30', status: 'Ativa', responsavel_id: 1 },
+  { id: 2, nome: 'Montagem Tanque T-405', codigo: 'T405', endereco: 'Av. do Aço, 800 — Distrito Siderúrgico (exemplo)', cliente: 'Siderúrgica Exemplo', numero_contrato: 'SE-0877', data_inicio: '2026-08-01', data_fim_contratual: '2026-11-30', status: 'Ativa', responsavel_id: 1 },
 ]
 
 // Coordenador e Diretoria veem todas as obras sem precisar estar aqui.

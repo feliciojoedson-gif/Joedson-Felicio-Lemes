@@ -162,8 +162,9 @@ button.obra { cursor: pointer; }
 .obra .chip { background: var(--accent); color: var(--ink); }
 .obra .chip.bad { background: var(--alert); color: #fff; }
 .obra .chip.ok { background: var(--ok-bg); color: var(--ok-ink); }
-.photo { min-height: 92px; background: linear-gradient(135deg, #A9A4A1, #7A7572); display: grid; place-items: center; color: rgba(255,255,255,.85); }
+.photo { min-height: 92px; background: linear-gradient(135deg, #A9A4A1, #7A7572); display: grid; place-items: center; color: rgba(255,255,255,.85); position: relative; overflow: hidden; }
 .photo svg { width: 34px; height: 34px; }
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .obra .photo { min-height: 100%; }
 .kpis { display: grid; grid-template-columns: repeat(3, 1fr); grid-column: 1 / -1; }
 .kpi { padding: 12px 12px 14px; color: #fff; background: var(--graphite); }
@@ -291,6 +292,7 @@ button.obra { cursor: pointer; }
 .modal { position: fixed; inset: 0; background: rgba(43,41,40,.8); display: grid; place-items: center; z-index: 60; padding: 16px; }
 .modal .box { background: var(--surface); width: min(560px, 100%); padding: 16px; }
 .modal .photo { min-height: 260px; margin-bottom: 12px; }
+.modal .photo img { object-fit: contain; background: #000; }
 
 /* login */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 20px 16px; }
@@ -355,3 +357,4 @@ button.obra { cursor: pointer; }
 }
 
 .login .corpo label.lb { font-weight: 800; margin-bottom: -6px; }
+.photo.miniatura .remover { position: absolute; top: 2px; right: 2px; z-index: 1; width: 44px; height: 44px; border: 0; background: transparent; color: #fff; font-size: 1.6rem; text-shadow: 0 0 4px #000; }
