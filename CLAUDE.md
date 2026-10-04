@@ -40,7 +40,35 @@ Diff que toca em `src/lib/supabase.js`, `src/lib/dados.js`, `src/App.jsx` (sess�
 
 ## Deploy
 
-Ainda não há. Padrão: a pessoa diz "sobe pro GitHub", o agente sobe com git, e a Vercel publica sozinha. A pessoa não digita comando.
+No ar em **https://joedson-felicio-lemes.vercel.app** (Vercel, plano Hobby). Repositório: `feliciojoedson-gif/Joedson-Felicio-Lemes`, branch `main`; o nome é o que o projeto já tinha e foi mantido de propósito. Padrão: a pessoa diz "sobe pro GitHub", o agente sobe com git, e a Vercel publica sozinha. A pessoa não digita comando.
+Variáveis no painel da Vercel: `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (**não** é `ANON_KEY`; o roteiro genérico da skill usa outro nome). Não há conector nem CLI da Vercel nesta máquina: mudança no painel é clique da pessoa.
+Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `Pendente` e o Coordenador libera). Fechar quebraria a liberação.
+
+## Estado atual (fim da sessão de 04/10/2026)
+
+**Pronto e testado pela pessoa no navegador:**
+- Diário de obra: lista de frentes, formulário do dia gravando no banco, correção no mesmo dia, até 4 fotos por lançamento (comprimidas no navegador, enviadas ao bucket `fotos`), fotos já enviadas visíveis ao corrigir, foto que falha fica no formulário e "Salvar" tenta de novo.
+- Detalhe da frente e tela Fotos mostram a imagem real (link assinado de 1 hora).
+- Publicado na Vercel; login abre no link público. `npm run check` fecha em zero (75 testes).
+
+**Pela metade:**
+- **Envio automático ao GitHub → Vercel não foi testado.** O primeiro envio depois do deploy é o teste: conferir na aba Deployments da Vercel que um deployment novo apareceu sozinho.
+- Etapa 10 da skill (varredura final no link público) **não foi feita**; só se conferiu que a tela de login abre e o JavaScript publicado tem a URL e a chave do Supabase. Login real no link público foi dito "funcionou" pela pessoa, sem varredura completa.
+- Foto órfã: se o arquivo sobe e a linha em `fotos` falha, o arquivo fica no bucket (só o Coordenador apaga). Marcado com `ponytail:` em `dados.js`.
+- `carregarBase` busca um link assinado por foto, todas de uma vez. Paginar se a obra passar de algumas centenas de fotos.
+- Fotos do seed não têm arquivo: aparecem como ícone.
+- "Mostrar ao cliente" (Detalhe da frente) e a foto mais recente do cartão da obra (Painel) ainda são só aviso/ícone.
+- Coordenador não tem lista dos lançamentos do dia no Diário (o histórico fica no Detalhe da frente). O PRD é ambíguo; decidir.
+- Os outros formulários ainda não gravam: frentes, medições, restrições, administração.
+
+**Pendências de ambiente/segurança (não mexidas):**
+- Pasta do projeto está dentro do OneDrive com `node_modules` e `.git`: risco de corromper o `.git`. Mover para fora (ex.: `C:\dev`).
+- Banco tem a migration `restricao_resolvida_search_path` sem arquivo em `supabase/migrations/` (viola "migration é arquivo").
+- Avisos do Supabase: 4 views `SECURITY DEFINER` (`frentes_cliente`, `medicoes_cliente`, `apontamentos_sem_efetivo`, `perfis_colegas`; provavelmente de propósito, confirmar), `rodar_virada` e `virada_estado` chamáveis por qualquer logado (confirmar que `rodar_virada` checa o perfil por dentro), proteção contra senha vazada desligada.
+- Arquivos soltos na raiz que não são do app: imagem do WhatsApp, `oficina-ok.txt`, `preview.html`.
+- 2FA da conta da Vercel não configurado. Plano grátis da Vercel tem restrição de uso comercial: conferir os termos antes de a equipe usar.
+
+**Próximo passo:** fazer o formulário de **Frentes** gravar de verdade (criar, editar, apagar, pelo `dados.js`, com teste da regra em `lib/` e RLS já existente), porque o Painel só mostra o que existe e hoje as frentes vêm do seed. Faça a mudança, rode `npm run check`, suba pro GitHub e confira na Vercel que o deploy automático aconteceu (isso fecha a pendência acima). Se preferir outro módulo, a ordem sugerida do plano é Frentes → Restrições → Medições → Administração.
 
 ## Armadilhas desta base
 
