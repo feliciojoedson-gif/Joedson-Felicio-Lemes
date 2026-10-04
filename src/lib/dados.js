@@ -5,8 +5,8 @@
 // APP MULTI-OBRA: tudo que é lançamento (frentes, diário, fotos, medições, restrições)
 // sai daqui já recortado por UMA obra. Nenhuma tela recebe dado de duas obras juntas.
 import { supabase } from './supabase.js'
-import { diarios as diariosDeExemplo } from './mockData.js'
-import { caminhoDaFoto, hojeEmBrasilia, legendaDaFoto, veTodasAsObras } from './regras.js'
+import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo } from './mockData.js'
+import { aplicarMovimento, caminhoDaFoto, hojeEmBrasilia, legendaDaFoto, novoPedido, veTodasAsObras } from './regras.js'
 
 const MENSAGENS = {
   'Invalid login credentials': 'Email ou senha incorretos.',
@@ -150,12 +150,39 @@ export async function rodarAtualizacaoDasFrentes() {
 // ponytail: trocar pelo Supabase, com tabela nova e RLS por obra, como as demais.
 const rdoEmMemoria = [...diariosDeExemplo]
 
-export async function listarRdo(obraId) {
-  return { data: rdoEmMemoria.filter((r) => r.obraId === obraId), erro: null }
+export async function listarRdo(obra) {
+  return { data: rdoEmMemoria.filter((r) => r.obraCodigo === obra.codigo), erro: null }
 }
 
-export async function salvarRdo(obraId, campos) {
-  const registro = { ...campos, id: Math.max(0, ...rdoEmMemoria.map((r) => r.id)) + 1, obraId }
+export async function salvarRdo(obra, campos) {
+  const registro = { ...campos, id: Math.max(0, ...rdoEmMemoria.map((r) => r.id)) + 1, obraCodigo: obra.codigo }
   rdoEmMemoria.unshift(registro)
   return { data: registro, erro: null }
+}
+
+// Materiais (Kanban de pedidos): também em memória, como o RDO. Sempre recortado por UMA obra.
+// ponytail: trocar pelo Supabase (catálogo global; pedidos com obra_id e RLS por obra).
+const pedidosEmMemoria = pedidosDeExemplo.map((p) => ({ ...p }))
+
+export async function listarCatalogo() {
+  return { data: materiaisCatalogo, erro: null }
+}
+
+export async function listarPedidos(obra) {
+  return { data: pedidosEmMemoria.filter((p) => p.obraCodigo === obra.codigo).map((p) => ({ ...p })), erro: null }
+}
+
+export async function criarPedido(obra, campos, hoje) {
+  const id = Math.max(0, ...pedidosEmMemoria.map((p) => p.id)) + 1
+  const pedido = novoPedido({ ...campos, id, obraCodigo: obra.codigo }, hoje)
+  pedidosEmMemoria.push(pedido)
+  return { data: { ...pedido }, erro: null }
+}
+
+// O pedido só é movido se for da obra informada: nunca mexe em pedido de outra obra.
+export async function moverPedido(obra, id, status, dados, hoje) {
+  const i = pedidosEmMemoria.findIndex((p) => p.id === id && p.obraCodigo === obra.codigo)
+  if (i < 0) return { data: null, erro: new Error('pedido não encontrado') }
+  pedidosEmMemoria[i] = aplicarMovimento(pedidosEmMemoria[i], status, dados, hoje)
+  return { data: { ...pedidosEmMemoria[i] }, erro: null }
 }

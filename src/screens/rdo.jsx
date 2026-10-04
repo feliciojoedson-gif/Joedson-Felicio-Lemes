@@ -135,7 +135,7 @@ export default function Rdo({ avisar }) {
   // A tela é remontada ao trocar de obra (Shell), então a lista nunca mistura obras.
   useEffect(() => {
     let vivo = true
-    listarRdo(obra.id).then(({ data, erro }) => {
+    listarRdo(obra).then(({ data, erro }) => {
       if (vivo) setEstado(erro ? { status: 'erro', lista: [] } : { status: 'ok', lista: ordenarRdo(data) })
     })
     return () => { vivo = false }
@@ -148,10 +148,10 @@ export default function Rdo({ avisar }) {
 
   // Otimista: o card aparece já; se o salvamento falhar, ele sai e a pessoa é avisada.
   const salvar = async (campos) => {
-    const provisorio = { ...campos, id: `novo-${Date.now()}`, obraId: obra.id }
+    const provisorio = { ...campos, id: `novo-${Date.now()}`, obraCodigo: obra.codigo }
     setEstado((e) => ({ status: 'ok', lista: ordenarRdo([provisorio, ...e.lista]) }))
     setAberto(false)
-    const { data, erro } = await salvarRdo(obra.id, campos)
+    const { data, erro } = await salvarRdo(obra, campos)
     if (erro) {
       setEstado((e) => ({ ...e, lista: e.lista.filter((r) => r !== provisorio) }))
       avisar('Não consegui salvar o registro. Tente de novo.')

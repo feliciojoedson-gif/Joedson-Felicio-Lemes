@@ -11,6 +11,7 @@ const CAMINHOS = {
   rdo: <><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 11h6M9 15h4" /></>,
   medicoes: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   restricoes: <><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17.5v.01" /></>,
+  materiais: <><path d="M3 8l9-5 9 5v9l-9 5-9-5z" /><path d="M3 8l9 5 9-5M12 13v9" /></>,
   mais: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
   admin: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /><path d="M18 8v6M15 11h6" /></>,
   fotos: <><path d="M4 8h3l2-3h6l2 3h3v12H4z" /><circle cx="12" cy="13.5" r="3.5" /></>,

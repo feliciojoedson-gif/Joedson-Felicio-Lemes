@@ -371,3 +371,23 @@ button.obra { cursor: pointer; }
 .sheet .input, .sheet textarea { width: 100%; }
 .field .erro { color: var(--bad-ink); font-weight: 800; margin-top: 6px; }
 @keyframes sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Materiais: Kanban de pedidos */
+.chip.info { background: #DCEBFA; color: #174A7C; }
+.chip.info::before { content: "◆"; }
+.contadores { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+.cont { background: var(--surface); border: 2px solid var(--ink); padding: 10px 12px; font-weight: 700; line-height: 1.2; }
+.cont b { display: block; font-family: var(--cond); font-size: 2.2rem; line-height: 1; }
+.cont.ruim { background: var(--bad-bg); border-color: var(--bad); color: var(--bad-ink); }
+.kanban { display: flex; gap: var(--sp-3); overflow-x: auto; margin-top: 14px; padding-bottom: var(--sp-3); scroll-snap-type: x proximity; align-items: flex-start; }
+.coluna { flex: 0 0 82%; max-width: 320px; scroll-snap-align: start; display: grid; gap: var(--sp-3); }
+@media (min-width: 700px) { .coluna { flex: 1 0 260px; } }
+.coluna h2 { font-family: var(--cond); font-size: 1.3rem; text-transform: uppercase; margin: 0; padding: 8px 10px; background: var(--ink); color: #fff; display: flex; justify-content: space-between; }
+.coluna .vazia { color: var(--muted); margin: 0; padding: 12px; border: 2px dashed var(--line); text-align: center; }
+.pedido { display: grid; gap: 6px; }
+.pedido .h { font-size: 1.05rem; }
+.pedido .qtd { font-family: var(--cond); font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.pedido .m { color: var(--muted); }
+.pedido .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.pedido.atrasado { border-color: var(--bad); background: var(--bad-bg); }
+.pedido .mover { display: grid; gap: 8px; margin-top: 4px; }

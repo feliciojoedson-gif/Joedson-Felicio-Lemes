@@ -1,5 +1,5 @@
 // Dados de exemplo do Diário de Obra (RDO). Só `lib/dados.js` importa este arquivo.
-// `obraId` é o id da obra em mock.js: 1 = Parada Geral Unidade 12, 2 = Montagem Tanque T-405.
+// `obraCodigo` é o código da obra (U12, T405): os ids do banco real não são os do mock.
 
 // Foto de exemplo: um quadro colorido, para a miniatura aparecer sem arquivo de verdade.
 const foto = (cor, rotulo) =>
@@ -8,20 +8,80 @@ const foto = (cor, rotulo) =>
   )}`
 
 export const diarios = [
-  { id: 1, obraId: 1, data: '2026-10-03', clima: 'sol', efetivo: 9,
+  { id: 1, obraCodigo: 'U12', data: '2026-10-03', clima: 'sol', efetivo: 9,
     atividades: 'Soldas do spool 14 da linha L-340 concluídas e líquido penetrante aprovado. Pintura da segunda demão no pórtico P-3.',
     ocorrencias: '', fotos: [foto('#5B5754', 'Spool 14'), foto('#C92D16', 'Pórtico P-3')] },
-  { id: 2, obraId: 1, data: '2026-10-02', clima: 'chuva', efetivo: 4,
+  { id: 2, obraCodigo: 'U12', data: '2026-10-02', clima: 'chuva', efetivo: 4,
     atividades: 'Içamento do feixe do trocador E-210 suspenso. Equipe só preparou o feixe tubular e organizou o canteiro.',
     ocorrencias: 'Chuva forte pela manhã: içamento cancelado por segurança.', fotos: [foto('#3A3735', 'Canteiro')] },
-  { id: 3, obraId: 1, data: '2026-10-01', clima: 'nublado', efetivo: 7,
+  { id: 3, obraCodigo: 'U12', data: '2026-10-01', clima: 'nublado', efetivo: 7,
     atividades: 'Lançamento de cabos até o painel PC-12 e calibração dos transmissores de pressão.',
     ocorrencias: '', fotos: [] },
-  { id: 4, obraId: 1, data: '2026-09-30', clima: 'sol', efetivo: 8,
+  { id: 4, obraCodigo: 'U12', data: '2026-09-30', clima: 'sol', efetivo: 8,
     atividades: 'Desmontagem de andaimes do forno F-101 até a cota 12 m. Revisão dos suportes do rack 3.',
     ocorrencias: 'Permissão de trabalho do forno F-101 não liberada pela operação: equipe parada das 8h às 11h.',
     fotos: [foto('#E1371E', 'Forno F-101'), foto('#5E5A57', 'Rack 3'), foto('#2B2928', 'Andaimes')] },
-  { id: 5, obraId: 2, data: '2026-10-03', clima: 'nublado', efetivo: 6,
+  { id: 5, obraCodigo: 'T405', data: '2026-10-03', clima: 'nublado', efetivo: 6,
     atividades: 'Preparação das chapas do fundo do tanque T-405 e conferência do alinhamento da base.',
     ocorrencias: '', fotos: [foto('#5B5754', 'Chapas do fundo')] },
+]
+
+// Materiais (Kanban de pedidos). `obraCodigo` é o código da obra (U12, T405): os ids do banco real não são os do mock. "Hoje" no exemplo = 2026-10-04.
+export const materiaisCatalogo = [
+  { id: 1, nome: 'Cimento CP-II (saco 50 kg)', unidade: 'sacos', categoria: 'grosso' },
+  { id: 2, nome: 'Areia média', unidade: 'm³', categoria: 'grosso' },
+  { id: 3, nome: 'Tijolo cerâmico 8 furos', unidade: 'milheiros', categoria: 'grosso' },
+  { id: 4, nome: 'Vergalhão CA-50 10 mm', unidade: 'barras', categoria: 'grosso' },
+  { id: 5, nome: 'Argamassa AC-III (saco 20 kg)', unidade: 'sacos', categoria: 'acabamento' },
+  { id: 6, nome: 'Porcelanato 60x60', unidade: 'm²', categoria: 'acabamento' },
+  { id: 7, nome: 'Tinta acrílica fosca 18 L', unidade: 'latas', categoria: 'acabamento' },
+  { id: 8, nome: 'Rejunte flexível', unidade: 'kg', categoria: 'acabamento' },
+  { id: 9, nome: 'Tubo PVC esgoto 100 mm (6 m)', unidade: 'barras', categoria: 'instalacoes' },
+  { id: 10, nome: 'Fio flexível 2,5 mm² (rolo 100 m)', unidade: 'rolos', categoria: 'instalacoes' },
+  { id: 11, nome: 'Registro de gaveta 3/4"', unidade: 'un', categoria: 'instalacoes' },
+  { id: 12, nome: 'Disjuntor monopolar 20 A', unidade: 'un', categoria: 'instalacoes' },
+]
+
+const semRecebimento = { qtdBateNF: null, estadoOk: null, avarias: '', fotoNF: '' }
+const recebidoOk = { qtdBateNF: true, estadoOk: true, avarias: '', fotoNF: '' }
+export const pedidos = [
+  { id: 1, obraCodigo: 'U12', materialId: 1, quantidade: 50, frente: 'Banheiro suíte', prioridade: 'normal', status: 'solicitar',
+    fornecedor: '', previsaoEntrega: '', historico: [{ status: 'solicitar', data: '2026-10-03' }], recebimento: semRecebimento },
+  { id: 2, obraCodigo: 'U12', materialId: 9, quantidade: 12, frente: 'Banheiro suíte', prioridade: 'critico', status: 'solicitar',
+    fornecedor: '', previsaoEntrega: '', historico: [{ status: 'solicitar', data: '2026-10-04' }], recebimento: semRecebimento },
+  { id: 3, obraCodigo: 'U12', materialId: 6, quantidade: 45, frente: 'Sala e cozinha', prioridade: 'normal', status: 'cotacao',
+    fornecedor: '', previsaoEntrega: '',
+    historico: [{ status: 'solicitar', data: '2026-09-26' }, { status: 'cotacao', data: '2026-09-29' }], recebimento: semRecebimento },
+  { id: 4, obraCodigo: 'U12', materialId: 7, quantidade: 8, frente: 'Fachada', prioridade: 'normal', status: 'cotacao',
+    fornecedor: '', previsaoEntrega: '',
+    historico: [{ status: 'solicitar', data: '2026-09-30' }, { status: 'cotacao', data: '2026-10-01' }], recebimento: semRecebimento },
+  { id: 5, obraCodigo: 'U12', materialId: 12, quantidade: 20, frente: 'Quadro elétrico', prioridade: 'critico', status: 'comprado',
+    fornecedor: 'Eletro Sul', previsaoEntrega: '2026-10-07',
+    historico: [{ status: 'solicitar', data: '2026-09-28' }, { status: 'cotacao', data: '2026-09-29' }, { status: 'comprado', data: '2026-10-01' }],
+    recebimento: semRecebimento },
+  { id: 6, obraCodigo: 'U12', materialId: 4, quantidade: 30, frente: 'Laje do mezanino', prioridade: 'normal', status: 'comprado',
+    fornecedor: 'Aço Brasil', previsaoEntrega: '2026-10-01',
+    historico: [{ status: 'solicitar', data: '2026-09-22' }, { status: 'cotacao', data: '2026-09-24' }, { status: 'comprado', data: '2026-09-26' }],
+    recebimento: semRecebimento },
+  { id: 7, obraCodigo: 'U12', materialId: 2, quantidade: 6, frente: 'Contrapiso', prioridade: 'normal', status: 'almoxarifado',
+    fornecedor: 'Areial Central', previsaoEntrega: '2026-09-30',
+    historico: [{ status: 'solicitar', data: '2026-09-20' }, { status: 'cotacao', data: '2026-09-22' }, { status: 'comprado', data: '2026-09-24' }, { status: 'almoxarifado', data: '2026-10-01' }],
+    recebimento: recebidoOk },
+  { id: 8, obraCodigo: 'U12', materialId: 5, quantidade: 40, frente: 'Banheiro suíte', prioridade: 'normal', status: 'almoxarifado',
+    fornecedor: 'Casa do Construtor', previsaoEntrega: '2026-10-02',
+    historico: [{ status: 'solicitar', data: '2026-09-25' }, { status: 'cotacao', data: '2026-09-26' }, { status: 'comprado', data: '2026-09-29' }, { status: 'almoxarifado', data: '2026-10-02' }],
+    recebimento: { qtdBateNF: false, estadoOk: true, avarias: 'Vieram 36 sacos; 4 sacos faltaram na entrega.', fotoNF: '' } },
+  { id: 9, obraCodigo: 'U12', materialId: 3, quantidade: 3, frente: 'Alvenaria do térreo', prioridade: 'normal', status: 'entregue',
+    fornecedor: 'Cerâmica Vale', previsaoEntrega: '2026-09-18',
+    historico: [{ status: 'solicitar', data: '2026-09-10' }, { status: 'cotacao', data: '2026-09-11' }, { status: 'comprado', data: '2026-09-13' }, { status: 'almoxarifado', data: '2026-09-17' }, { status: 'entregue', data: '2026-09-19' }],
+    recebimento: recebidoOk },
+  { id: 10, obraCodigo: 'U12', materialId: 8, quantidade: 25, frente: 'Sala e cozinha', prioridade: 'normal', status: 'entregue',
+    fornecedor: 'Casa do Construtor', previsaoEntrega: '2026-09-22',
+    historico: [{ status: 'solicitar', data: '2026-09-12' }, { status: 'cotacao', data: '2026-09-14' }, { status: 'comprado', data: '2026-09-16' }, { status: 'almoxarifado', data: '2026-09-22' }, { status: 'entregue', data: '2026-09-24' }],
+    recebimento: recebidoOk },
+  { id: 11, obraCodigo: 'T405', materialId: 1, quantidade: 100, frente: 'Base do tanque', prioridade: 'normal', status: 'solicitar',
+    fornecedor: '', previsaoEntrega: '', historico: [{ status: 'solicitar', data: '2026-10-02' }], recebimento: semRecebimento },
+  { id: 12, obraCodigo: 'T405', materialId: 4, quantidade: 24, frente: 'Anel de fundação', prioridade: 'critico', status: 'cotacao',
+    fornecedor: '', previsaoEntrega: '',
+    historico: [{ status: 'solicitar', data: '2026-09-30' }, { status: 'cotacao', data: '2026-10-02' }], recebimento: semRecebimento },
 ]

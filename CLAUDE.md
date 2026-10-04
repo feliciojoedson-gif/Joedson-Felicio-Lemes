@@ -60,6 +60,7 @@ Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `P
 - "Mostrar ao cliente" (Detalhe da frente) e a foto mais recente do cartão da obra (Painel) ainda são só aviso/ícone.
 - Coordenador não tem lista dos lançamentos do dia no Diário (o histórico fica no Detalhe da frente). O PRD é ambíguo; decidir.
 - Os outros formulários ainda não gravam: frentes, medições, restrições, administração.
+- Materiais (Kanban de pedidos): em memória (`dados.js` + `mockData.js`), como o Diário de Obra; volta ao exemplo ao recarregar. Banco: tabela com `obra_id` e RLS por obra (marcado com `ponytail:`).
 
 **Pendências de ambiente/segurança (não mexidas):**
 - Pasta do projeto está dentro do OneDrive com `node_modules` e `.git`: risco de corromper o `.git`. Mover para fora (ex.: `C:\dev`).

@@ -13,10 +13,11 @@ import Admin from '../screens/admin.jsx'
 import Perfil from '../screens/perfil.jsx'
 import Mais from '../screens/mais.jsx'
 import Rdo from '../screens/rdo.jsx'
+import Materiais from '../screens/materiais.jsx'
 
 const TELAS = {
   painel: Painel, frentes: Frentes, detalhe: Detalhe, diario: Diario, medicoes: Medicoes,
-  restricoes: Restricoes, fotos: Fotos, admin: Admin, perfil: Perfil, mais: Mais, rdo: Rdo,
+  restricoes: Restricoes, fotos: Fotos, admin: Admin, perfil: Perfil, mais: Mais, rdo: Rdo, materiais: Materiais,
 }
 
 // Uma shell para todos os perfis: o que muda é o menu, que vem de lib/regras.js.

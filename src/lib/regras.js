@@ -16,10 +16,10 @@ export const STATUS_RESTRICAO = ['Aberta', 'Em tratamento', 'Resolvida']
 // ---------- Menus e permissões ----------
 
 export const MENUS = {
-  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'rdo', 'admin', 'perfil'],
-  Planejamento: ['painel', 'frentes', 'medicoes', 'perfil'],
+  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'rdo', 'admin', 'perfil'],
+  Planejamento: ['painel', 'frentes', 'medicoes', 'materiais', 'perfil'],
   Engenharia: ['restricoes', 'frentes', 'perfil'],
-  Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'perfil'],
+  Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'materiais', 'perfil'],
   Medição: ['medicoes', 'frentes', 'perfil'],
   'Custos e Controle': ['painel', 'medicoes', 'perfil'],
   'Gestão Contratual': ['restricoes', 'medicoes', 'frentes', 'perfil'],
@@ -35,6 +35,7 @@ export const ROTULOS = {
   rdo: 'Diário de Obra',
   medicoes: 'Medições',
   restricoes: 'Restrições',
+  materiais: 'Materiais',
   fotos: 'Fotos',
   admin: 'Administração',
   perfil: 'Meu perfil',
@@ -65,6 +66,7 @@ const PERMISSOES = {
   liberarFoto: ['Coordenador'],
   administrar: ['Coordenador'],
   rodarAtualizacao: ['Coordenador'],
+  gerirMateriais: ['Coordenador', 'Planejamento', 'Produção'],
 }
 export const pode = (role, acao) => (PERMISSOES[acao] || []).includes(role)
 
@@ -300,3 +302,116 @@ export function dataExtensa(iso) {
   const [a, m, d] = iso.split('-').map(Number)
   return new Date(a, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
 }
+
+// ---------- Materiais: Kanban de pedidos ----------
+// Cada card é um pedido/lote que percorre as colunas; o `historico` ({status, data}) é a fonte do aging e do lead time.
+export const COLUNAS_MATERIAL = [
+  { id: 'solicitar', rotulo: 'Solicitar' },
+  { id: 'cotacao', rotulo: 'Em Cotação' },
+  { id: 'comprado', rotulo: 'Comprado / A Caminho' },
+  { id: 'almoxarifado', rotulo: 'No Almoxarifado' },
+  { id: 'entregue', rotulo: 'Entregue na Frente' },
+]
+export const CATEGORIAS_MATERIAL = { grosso: 'Material grosso', acabamento: 'Acabamento', instalacoes: 'Instalações' }
+
+const posicaoDaColuna = (id) => COLUNAS_MATERIAL.findIndex((c) => c.id === id)
+export const colunaDepois = (id) => COLUNAS_MATERIAL[posicaoDaColuna(id) + 1] || null
+export const colunaAntes = (id) => COLUNAS_MATERIAL[posicaoDaColuna(id) - 1] || null
+
+// Data em que o pedido entrou na coluna `status` (a última vez, se voltou e avançou de novo).
+export function dataDeEntrada(p, status = p.status) {
+  const entradas = p.historico.filter((h) => h.status === status)
+  return entradas.length ? entradas[entradas.length - 1].data : null
+}
+export const diasNaColuna = (p, hoje) => {
+  const d = dataDeEntrada(p)
+  return d ? Math.max(0, diasEntre(d, hoje)) : 0
+}
+export const textoDeDias = (n) => (n === 0 ? 'hoje' : `há ${n} ${n === 1 ? 'dia' : 'dias'}`)
+
+// Lead time: dias entre a primeira entrada em 'solicitar' e a primeira em 'almoxarifado'. Null enquanto não chegou.
+export function leadTimeDias(p) {
+  const primeira = (status) => p.historico.find((h) => h.status === status)?.data
+  const ini = primeira('solicitar')
+  const fim = primeira('almoxarifado')
+  return ini && fim ? diasEntre(ini, fim) : null
+}
+
+export const estaAtrasado = (p, hoje) => p.status === 'comprado' && Boolean(p.previsaoEntrega) && p.previsaoEntrega < hoje
+// Chega nos próximos 7 dias (hoje incluso) e ainda não venceu.
+export function chegaNaSemana(p, hoje) {
+  if (p.status !== 'comprado' || !p.previsaoEntrega) return false
+  const dias = diasEntre(hoje, p.previsaoEntrega)
+  return dias >= 0 && dias <= 7
+}
+export const temAlertaDeRecebimento = (p) => p.recebimento?.qtdBateNF === false || p.recebimento?.estadoOk === false
+
+export function contadoresMateriais(pedidos, hoje) {
+  return {
+    cotacao: pedidos.filter((p) => p.status === 'cotacao').length,
+    semana: pedidos.filter((p) => chegaNaSemana(p, hoje)).length,
+    atrasados: pedidos.filter((p) => estaAtrasado(p, hoje)).length,
+  }
+}
+
+// Vermelho = crítico; azul = material grosso; verde = acabamento e instalações.
+export function pillDoPedido(p, categoria) {
+  const rotulo = CATEGORIAS_MATERIAL[categoria] || 'Material'
+  if (p.prioridade === 'critico') return { tom: 'bad', rotulo: `Crítico · ${rotulo}` }
+  return { tom: categoria === 'grosso' ? 'info' : 'ok', rotulo }
+}
+
+// Pedido novo nasce em 'Solicitar'; mover grava {status, data} no histórico.
+export function novoPedido({ id, obraCodigo, materialId, quantidade, frente, prioridade }, hoje) {
+  return {
+    id, obraCodigo, materialId, quantidade, frente: frente.trim(), prioridade, status: 'solicitar',
+    fornecedor: '', previsaoEntrega: '', historico: [{ status: 'solicitar', data: hoje }],
+    recebimento: { qtdBateNF: null, estadoOk: null, avarias: '', fotoNF: '' },
+  }
+}
+export function aplicarMovimento(p, status, dados, hoje) {
+  const novo = { ...p, status, historico: [...p.historico, { status, data: hoje }] }
+  // Voltar de coluna chega sem dados: nada é sobrescrito.
+  if (status === 'comprado' && dados.fornecedor !== undefined) {
+    novo.fornecedor = dados.fornecedor.trim()
+    novo.previsaoEntrega = dados.previsaoEntrega
+  }
+  if (status === 'almoxarifado' && dados.qtdBateNF !== undefined) {
+    novo.recebimento = {
+      qtdBateNF: dados.qtdBateNF, estadoOk: dados.estadoOk, avarias: (dados.avarias || '').trim(), fotoNF: dados.fotoNF || '',
+    }
+  }
+  if (status === 'entregue' && dados.frente !== undefined) novo.frente = dados.frente.trim()
+  return novo
+}
+
+// Campo numérico: só dígitos e uma vírgula (aceita ponto e troca por vírgula).
+export function limparNumero(texto) {
+  const t = String(texto).replace('.', ',').replace(/[^\d,]/g, '')
+  const i = t.indexOf(',')
+  return i < 0 ? t : t.slice(0, i + 1) + t.slice(i + 1).replace(/,/g, '')
+}
+export const lerQuantidade = (texto) => Number(String(texto).replace(',', '.'))
+
+export function errosPedido({ materialId, quantidade, frente, prioridade }) {
+  const erros = {}
+  if (!materialId) erros.materialId = 'Escolha o material.'
+  if (!String(quantidade).trim() || !(lerQuantidade(quantidade) > 0)) erros.quantidade = 'Informe a quantidade (só número, maior que zero).'
+  if (!String(frente).trim()) erros.frente = 'Informe a frente que vai usar o material.'
+  if (!['normal', 'critico'].includes(prioridade)) erros.prioridade = 'Escolha a prioridade.'
+  return erros
+}
+export function errosCompra({ fornecedor, previsaoEntrega }, hoje) {
+  const erros = {}
+  if (!String(fornecedor).trim()) erros.fornecedor = 'Informe o fornecedor.'
+  if (!previsaoEntrega) erros.previsaoEntrega = 'Informe a previsão de entrega.'
+  else if (previsaoEntrega < hoje) erros.previsaoEntrega = 'A previsão não pode ser antes de hoje.'
+  return erros
+}
+export function errosRecebimento({ qtdBateNF, estadoOk }) {
+  const erros = {}
+  if (typeof qtdBateNF !== 'boolean') erros.qtdBateNF = 'Responda sim ou não.'
+  if (typeof estadoOk !== 'boolean') erros.estadoOk = 'Responda sim ou não.'
+  return erros
+}
+export const errosEntrega = ({ frente }) => (String(frente).trim() ? {} : { frente: 'Confirme a frente de aplicação.' })
