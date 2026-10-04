@@ -5,7 +5,11 @@
 // APP MULTI-OBRA: tudo que é lançamento (frentes, diário, fotos, medições, restrições)
 // sai daqui já recortado por UMA obra. Nenhuma tela recebe dado de duas obras juntas.
 import { supabase } from './supabase.js'
-import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, planejamentoDeExemplo } from './mockData.js'
+import {
+  contratos as contratosDeExemplo, diarios as diariosDeExemplo, itensContrato as itensDeExemplo, materiaisCatalogo,
+  medicoes as medicoesDeExemplo, pedidos as pedidosDeExemplo, planejamentoDeExemplo,
+} from './mockData.js'
+import { aplicarMovimentoContrato, novaMedicao, novoContrato, verificarBoletim, verificarMovimento } from './empreiteiros.js'
 import {
   aplicarAtividade, aplicarRestricao, arquivarAtividade, calendarioPadrao, reprogramarRestricao, resolverRestricao,
   restricoesDaImportacao, baselineDaImportacao, criarBaseline,
@@ -189,6 +193,66 @@ export async function moverPedido(obra, id, status, dados, hoje) {
   if (i < 0) return { data: null, erro: new Error('pedido não encontrado') }
   pedidosEmMemoria[i] = aplicarMovimento(pedidosEmMemoria[i], status, dados, hoje)
   return { data: { ...pedidosEmMemoria[i] }, erro: null }
+}
+
+// Medições de empreiteiros (contratos, itens do escopo e boletins): em memória, como Materiais. Sempre de UMA obra.
+// ponytail: trocar pelo Supabase (contratos com obra_id; itens e boletins ligados ao contrato; RLS por obra).
+const contratosEmMemoria = contratosDeExemplo.map((c) => ({ ...c }))
+const itensEmMemoria = itensDeExemplo.map((i) => ({ ...i }))
+const medicoesEmMemoria = medicoesDeExemplo.map((m) => ({ ...m, linhas: m.linhas.map((l) => ({ ...l })) }))
+const proximoId = (lista) => Math.max(0, ...lista.map((x) => x.id)) + 1
+
+// Devolve contratos da obra + os itens e boletins deles (nunca de outra obra).
+export async function listarContratos(obra) {
+  const contratos = contratosEmMemoria.filter((c) => c.obraCodigo === obra.codigo)
+  const ids = new Set(contratos.map((c) => c.id))
+  return {
+    data: {
+      contratos: contratos.map((c) => ({ ...c })),
+      itens: itensEmMemoria.filter((i) => ids.has(i.contratoId)).map((i) => ({ ...i })),
+      medicoes: medicoesEmMemoria.filter((m) => ids.has(m.contratoId)).map((m) => ({ ...m, linhas: m.linhas.map((l) => ({ ...l })) })),
+    },
+    erro: null,
+  }
+}
+
+export async function criarContrato(obra, campos, hoje) {
+  const contrato = novoContrato({ ...campos, id: proximoId(contratosEmMemoria), obraCodigo: obra.codigo }, hoje)
+  contratosEmMemoria.push(contrato)
+  return { data: { ...contrato }, erro: null }
+}
+
+// Move uma coluna. Ao ativar, `cadastro` ({ modo, valorTotal, itens }) grava o valor; no escopo, troca os itens do contrato.
+// As regras (100% medido, medição lançada) são reconferidas aqui: a tela já avisou, mas a camada não confia nela.
+export async function moverContrato(obra, id, status, cadastro) {
+  const i = contratosEmMemoria.findIndex((c) => c.id === id && c.obraCodigo === obra.codigo)
+  if (i < 0) return { data: null, erro: new Error('contrato não encontrado') }
+  const atual = contratosEmMemoria[i]
+  const bloqueio = verificarMovimento(atual, status, medicoesEmMemoria)
+  if (bloqueio) return { data: null, erro: new Error(bloqueio) }
+  if (status === 'ativo' && !cadastro && !atual.modo) return { data: null, erro: new Error('cadastre o valor antes de ativar') }
+  contratosEmMemoria[i] = aplicarMovimentoContrato(atual, status, cadastro)
+  let itens = itensEmMemoria.filter((x) => x.contratoId === id)
+  if (cadastro) {
+    for (let k = itensEmMemoria.length - 1; k >= 0; k--) if (itensEmMemoria[k].contratoId === id) itensEmMemoria.splice(k, 1)
+    if (cadastro.modo === 'escopo') {
+      cadastro.itens.forEach((item) => itensEmMemoria.push({ ...item, id: proximoId(itensEmMemoria), contratoId: id }))
+    }
+    itens = itensEmMemoria.filter((x) => x.contratoId === id)
+  }
+  return { data: { contrato: { ...contratosEmMemoria[i] }, itens: itens.map((x) => ({ ...x })) }, erro: null }
+}
+
+// Lança um boletim. A numeração e o bloqueio de 100% são decididos aqui, não na tela.
+export async function criarMedicao(obra, contratoId, boletim) {
+  const contrato = contratosEmMemoria.find((c) => c.id === contratoId && c.obraCodigo === obra.codigo)
+  if (!contrato) return { data: null, erro: new Error('contrato não encontrado') }
+  const itens = itensEmMemoria.filter((i) => i.contratoId === contratoId)
+  const bloqueio = verificarBoletim(contrato, itens, medicoesEmMemoria, boletim)
+  if (bloqueio) return { data: null, erro: new Error(bloqueio) }
+  const medicao = novaMedicao(contrato, medicoesEmMemoria, proximoId(medicoesEmMemoria), boletim)
+  medicoesEmMemoria.push(medicao)
+  return { data: { ...medicao, linhas: medicao.linhas.map((l) => ({ ...l })) }, erro: null }
 }
 
 // PLANEJAMENTO (Last Planner): também em memória. Uma lista de atividades por obra, compartilhada por todas as abas

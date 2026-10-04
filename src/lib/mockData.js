@@ -163,3 +163,32 @@ export const planejamentoDeExemplo = {
     calendario: calendarioPadrao(),
   },
 }
+
+// Medições de empreiteiros. `obraCodigo` como nos demais (U12 é a obra 1, T405 a 2). "Hoje" no exemplo = 2026-10-04.
+// Contrato GLOBAL: só `valorTotal`. Contrato POR ESCOPO: `valorTotal` = soma de `itensContrato`.
+// Cada boletim guarda `valor`; no escopo, `linhas` traz a quantidade executada por item (a fonte da verdade).
+export const contratos = [
+  { id: 1, obraCodigo: 'U12', empreiteiro: 'Tinturas & Cores Ltda', descricao: 'Pintura interna de todos os ambientes', status: 'elaboracao', modo: null, valorTotal: null, criadoEm: '2026-10-02' },
+  { id: 2, obraCodigo: 'U12', empreiteiro: 'Volt Instalações Elétricas', descricao: 'Infraestrutura e quadros elétricos', status: 'enviado', modo: null, valorTotal: null, criadoEm: '2026-09-25' },
+  { id: 3, obraCodigo: 'U12', empreiteiro: 'Gesso Forte Acabamentos', descricao: 'Forro e sancas de gesso', status: 'ativo', modo: 'global', valorTotal: 30000, criadoEm: '2026-09-05' },
+  { id: 4, obraCodigo: 'U12', empreiteiro: 'Drywall Sul Divisórias', descricao: 'Paredes e forros em drywall', status: 'ativo', modo: 'escopo', valorTotal: 30000, criadoEm: '2026-09-01' },
+  { id: 5, obraCodigo: 'U12', empreiteiro: 'Demol Rápido Serviços', descricao: 'Demolição de alvenaria e retirada de entulho', status: 'concluido', modo: 'global', valorTotal: 12000, criadoEm: '2026-08-20' },
+  { id: 6, obraCodigo: 'T405', empreiteiro: 'Concreto Norte Fundações', descricao: 'Fundação do tanque T405', status: 'ativo', modo: 'global', valorTotal: 50000, criadoEm: '2026-09-10' },
+  { id: 7, obraCodigo: 'T405', empreiteiro: 'Pintura Industrial Aço Vivo', descricao: 'Pintura anticorrosiva da estrutura', status: 'elaboracao', modo: null, valorTotal: null, criadoEm: '2026-10-01' },
+]
+
+export const itensContrato = [
+  { id: 1, contratoId: 4, descricao: 'Placas de drywall', unidade: 'm2', quantidade: 200, precoUnitario: 80 },
+  { id: 2, contratoId: 4, descricao: 'Tratamento de juntas', unidade: 'm2', quantidade: 200, precoUnitario: 40 },
+  { id: 3, contratoId: 4, descricao: 'Tabica de fixação', unidade: 'm', quantidade: 50, precoUnitario: 120 },
+]
+
+export const medicoes = [
+  { id: 1, contratoId: 3, numero: 1, data: '2026-09-20', valor: 9000, linhas: [] },
+  { id: 2, contratoId: 3, numero: 2, data: '2026-10-02', valor: 3000, linhas: [] },
+  { id: 3, contratoId: 4, numero: 1, data: '2026-09-15', valor: 8000, linhas: [{ itemId: 1, quantidade: 80 }, { itemId: 2, quantidade: 40 }] },
+  { id: 4, contratoId: 4, numero: 2, data: '2026-09-29', valor: 9600, linhas: [{ itemId: 1, quantidade: 60 }, { itemId: 2, quantidade: 60 }, { itemId: 3, quantidade: 20 }] },
+  { id: 5, contratoId: 5, numero: 1, data: '2026-09-02', valor: 8000, linhas: [] },
+  { id: 6, contratoId: 5, numero: 2, data: '2026-09-18', valor: 4000, linhas: [] },
+  { id: 7, contratoId: 6, numero: 1, data: '2026-09-30', valor: 10000, linhas: [] },
+]

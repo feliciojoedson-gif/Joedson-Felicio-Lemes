@@ -10,6 +10,7 @@ const CAMINHOS = {
   diario: <><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z" /><path d="M9 8h6M9 12h6M9 16h3" /></>,
   rdo: <><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 11h6M9 15h4" /></>,
   medicoes: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  empreiteiros: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /><circle cx="18" cy="9" r="2.5" /><path d="M18 14.5c2 .3 3.3 1.8 3.5 4.5" /></>,
   restricoes: <><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17.5v.01" /></>,
   materiais: <><path d="M3 8l9-5 9 5v9l-9 5-9-5z" /><path d="M3 8l9 5 9-5M12 13v9" /></>,
   planejamento: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4M7 14h4M13 14h4M7 18h7" /></>,

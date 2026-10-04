@@ -79,6 +79,14 @@ Quatro abas (EAP, Longo, Médio, Curto) em `src/screens/planejamento/`, **todas 
 - Semana de planejamento: segunda a domingo; sábado e domingo já olham para a semana seguinte (`segundaDeReferencia`).
 - Confirmação dentro da tela (`useConfirmar` em `planejamento/ui.jsx`), não `window.confirm`: ele some em navegador embutido e o clique "não faz nada".
 
+## Módulo Empreiteiros (contratos e fichas de medição)
+
+Rota `empreiteiros` (`src/screens/empreiteiros.jsx` + `empreiteiros/{valor,ficha,ui}.jsx`). Não confundir com `medicoes`, que é a medição das **frentes**. Kanban Elaboração → Enviado → Ativo → Concluído; ativar abre o cadastro do valor (global ou por escopo); só contrato Ativo recebe boletim.
+- Regras puras em `src/lib/empreiteiros.js`, testes em `tests/empreiteiros.mjs`. A **quantidade é a fonte da verdade** do escopo: % e R$ são derivados dela. Dinheiro sempre somado em centavos.
+- Bloqueios (100% medido para concluir, nenhum item passa de 100%) são reconferidos em `dados.js`, não só na tela.
+- Perfis que criam/movem/medem: Coordenador, Planejamento, Medição (`gerirEmpreiteiros`); os demais só consultam.
+- **Ainda sem banco:** dados em memória em `dados.js` (`ponytail:`), exemplo em `mockData.js` (`contratos`, `itensContrato`, `medicoes`). Banco: contratos com `obra_id`, itens e boletins ligados ao contrato, RLS por obra.
+
 ## Armadilhas desta base
 
 - **Banco:** projeto Supabase `kaefer-rip` (`rbqzyxyneuqbeyvjdzom`, São Paulo). Chaves em `.env.local` (fora do git; modelo em `.env.example`). Migrations em `supabase/migrations/` e testes de RLS em `supabase/tests/*.sql` (cada um termina em erro `RELATORIO` de propósito, para não gravar nada).
