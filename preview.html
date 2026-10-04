@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Obras — Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Paleta Aço */
+  --primary:#1F4E79; --ink:#132B40; --bg:#F4F7FA; --accent:#F5A623; --alert:#D64545;
+  /* derivados */
+  --surface:#FFFFFF; --line:#C9D4DE; --muted:#4B6073;
+  --ok:#2E8B57; --ok-bg:#E1F2E8; --ok-ink:#17613A;
+  --warn:#F5A623; --warn-bg:#FDEED0; --warn-ink:#6E4300;
+  --bad:#D64545; --bad-bg:#FBE1E1; --bad-ink:#9B2323;
+  --radius:14px; --nav-h:68px; --side-w:248px;
+}
+*{box-sizing:border-box}
+html{font-size:17px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;line-height:1.35;-webkit-text-size-adjust:100%}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- Estrutura ---------- */
+.app{min-height:100vh}
+.sidebar{display:none}
+.main{padding:16px 16px calc(var(--nav-h) + 24px)}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.topbar h1{font-size:1.45rem;margin:0;font-weight:800;letter-spacing:-.01em}
+.who{font-size:.85rem;color:var(--muted);text-align:right}
+.who b{display:block;color:var(--ink);font-size:.95rem}
+
+.bottomnav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-h);background:var(--surface);border-top:2px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:20}
+.bottomnav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.78rem;font-weight:700;color:var(--muted);min-height:44px;padding:6px 2px}
+.bottomnav button svg{width:26px;height:26px}
+.bottomnav button.on{color:var(--primary)}
+.bottomnav button.on::before{content:"";position:absolute;top:0;width:44px;height:4px;border-radius:0 0 4px 4px;background:var(--primary)}
+.bottomnav button{position:relative}
+
+@media (min-width:900px){
+  .sidebar{display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;width:var(--side-w);background:var(--ink);color:#fff;padding:20px 14px;z-index:20}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;padding:4px 10px 22px}
+  .brand .logo{width:38px;height:38px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--ink)}
+  .sidebar nav{display:flex;flex-direction:column;gap:4px}
+  .sidebar nav button{display:flex;align-items:center;gap:12px;background:none;border:0;color:#CFE0EE;text-align:left;font-weight:700;font-size:1rem;padding:12px 14px;border-radius:10px;min-height:48px}
+  .sidebar nav button svg{width:24px;height:24px;flex:none}
+  .sidebar nav button:hover{background:rgba(255,255,255,.08)}
+  .sidebar nav button.on{background:var(--primary);color:#fff}
+  .sidebar .foot{margin-top:auto;font-size:.85rem;color:#9FB6CA;padding:10px 12px}
+  .sidebar .foot b{color:#fff;display:block;font-size:.95rem}
+  .bottomnav{display:none}
+  .main{margin-left:var(--side-w);padding:28px 36px 48px;max-width:calc(var(--side-w) + 1280px)}
+  .topbar h1{font-size:1.9rem}
+}
+
+/* ---------- Componentes ---------- */
+.card{background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:16px}
+.section-title{font-size:.8rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:12px;border:2px solid var(--primary);background:var(--primary);color:#fff;font-weight:800;font-size:1rem}
+.btn.secondary{background:var(--surface);color:var(--primary)}
+.btn.accent{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.btn.block{width:100%}
+.btn svg{width:22px;height:22px}
+.select{min-height:48px;border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:0 12px;font-weight:700;width:100%}
+.filters{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:6px}
+@media (min-width:700px){.filters{grid-template-columns:repeat(4,1fr)}}
+
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font-weight:800;font-size:.85rem;white-space:nowrap}
+.chip::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+.chip.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.chip.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.chip.bad{background:var(--bad-bg);color:var(--bad-ink)}
+.chip.neutral{background:#E5EBF1;color:#33485B}
+.tag{display:inline-block;background:#E5EBF1;color:#33485B;border-radius:8px;padding:3px 9px;font-size:.8rem;font-weight:700}
+
+/* alertas */
+.alerts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:900px){.alerts{grid-template-columns:repeat(4,1fr);gap:14px}}
+.alert{text-align:left;border:2px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:12px 14px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+.alert .n{font-size:2.6rem;font-weight:900;line-height:1}
+.alert .l{font-size:.88rem;font-weight:700;color:var(--muted)}
+.alert.bad{border-color:var(--bad);background:var(--bad-bg)} .alert.bad .n{color:var(--bad-ink)}
+.alert.warn{border-color:var(--warn);background:var(--warn-bg)} .alert.warn .n{color:var(--warn-ink)}
+.alert.on{box-shadow:0 0 0 3px var(--primary)}
+
+/* cartões de obra */
+.obras{display:grid;gap:12px}
+@media (min-width:900px){.obras{grid-template-columns:1fr 1fr;gap:16px}}
+.obra{display:grid;grid-template-columns:1fr 92px;gap:12px}
+.obra h3{margin:0 0 2px;font-size:1.15rem}
+.obra .cli{color:var(--muted);font-size:.88rem;margin-bottom:10px}
+.photo{border-radius:12px;min-height:92px;background:linear-gradient(135deg,#8FA9BF,#4E6D88);display:grid;place-items:center;color:rgba(255,255,255,.85)}
+.photo svg{width:34px;height:34px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;grid-column:1/-1}
+.kpi .v{font-size:1.9rem;font-weight:900;line-height:1.05}
+.kpi .k{font-size:.78rem;font-weight:700;color:var(--muted)}
+.kpi .v.neg{color:var(--bad-ink)} .kpi .v.warnv{color:var(--warn-ink)}
+.obra-foot{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:2px solid var(--line);padding-top:10px;margin-top:4px;font-size:.88rem}
+.obra-foot b{font-weight:800}
+
+/* gráfico de barras */
+.bars{display:grid;gap:16px}
+.bar-row .lab{display:flex;justify-content:space-between;font-weight:800;margin-bottom:6px;font-size:.95rem}
+.track{height:16px;border-radius:8px;background:#E3EAF1;position:relative;margin-bottom:6px;overflow:hidden}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:8px}
+.track.plan i{background:#8FA9BF}
+.track.real i{background:var(--primary)}
+.legend{display:flex;gap:16px;font-size:.82rem;font-weight:700;color:var(--muted);margin-top:12px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend .p::before{background:#8FA9BF} .legend .r::before{background:var(--primary)}
+
+/* lista de frentes */
+.flist{display:grid;gap:10px}
+.frente{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;text-align:left;width:100%;background:var(--surface);border:2px solid var(--line);border-left-width:8px;border-radius:var(--radius);padding:14px;min-height:88px}
+.frente.bad{border-left-color:var(--bad)} .frente.warn{border-left-color:var(--warn)} .frente.ok{border-left-color:var(--ok)} .frente.neutral{border-left-color:#8FA9BF}
+.frente .t{font-weight:800;font-size:1.05rem}
+.frente .s{font-size:.85rem;color:var(--muted);margin-top:2px}
+.frente .days{text-align:center;min-width:72px}
+.frente .days .n{font-size:2.3rem;font-weight:900;line-height:1}
+.frente .days .u{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.frente.bad .days .n{color:var(--bad-ink)} .frente.warn .days .n{color:var(--warn-ink)}
+.frente .meta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.88rem}
+.frente .meta b{font-weight:800}
+.pbar{flex:1 1 150px;min-width:130px}
+.pbar .tr{height:10px;border-radius:6px;background:#E3EAF1;position:relative}
+.pbar .tr i{position:absolute;left:0;top:0;bottom:0;background:var(--primary);border-radius:6px}
+.pbar .tr u{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink);border-radius:2px}
+.pbar small{display:block;margin-top:4px;font-weight:700;color:var(--muted);font-size:.78rem}
+.neg{color:var(--bad-ink);font-weight:800}
+
+@media (min-width:900px){
+  .frente{grid-template-columns:minmax(220px,1.4fr) 100px minmax(170px,1.2fr) 110px 110px 120px;align-items:center;padding:12px 16px;min-height:76px}
+  .frente .meta{display:contents}
+  .frente .c-imp,.frente .c-dec{font-weight:800}
+  .flist-head{display:grid;grid-template-columns:minmax(220px,1.4fr) 100px minmax(170px,1.2fr) 110px 110px 120px;gap:6px 12px;padding:0 24px 6px 22px;font-size:.75rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .frente .days{text-align:left}
+}
+@media (max-width:899px){ .flist-head{display:none} }
+
+/* detalhe */
+.back{background:none;border:0;color:var(--primary);font-weight:800;min-height:44px;padding:0;display:inline-flex;align-items:center;gap:6px;margin-bottom:6px}
+.big-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:700px){.big-stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.stat .v{font-size:2.2rem;font-weight:900;line-height:1.05}
+.stat .k{font-size:.8rem;font-weight:700;color:var(--muted)}
+.stat.bad{border-color:var(--bad);background:var(--bad-bg)} .stat.bad .v{color:var(--bad-ink)}
+.stat.warn{border-color:var(--warn);background:var(--warn-bg)} .stat.warn .v{color:var(--warn-ink)}
+.two{display:grid;gap:14px}
+@media (min-width:900px){.two{grid-template-columns:1.2fr 1fr}}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.timeline li{display:grid;grid-template-columns:62px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.timeline li:last-child{border:0}
+.timeline .d{font-weight:900}
+.timeline .x{font-size:.9rem;color:var(--muted)}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.photos .photo{min-height:84px}
+.rest-item{display:grid;gap:4px;padding:12px;border:2px solid var(--line);border-radius:12px;margin-bottom:10px;background:var(--surface)}
+.rest-item .h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;font-weight:800}
+.rest-item .m{font-size:.85rem;color:var(--muted)}
+
+/* diário */
+.stepper{display:grid;grid-template-columns:64px 1fr 64px;gap:10px;align-items:center}
+.stepper button{min-height:60px;border-radius:12px;border:2px solid var(--primary);background:var(--surface);color:var(--primary);font-size:1.8rem;font-weight:900}
+.stepper .val{text-align:center;font-size:2.8rem;font-weight:900;line-height:1}
+.stepper .val small{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-top:4px}
+.field{margin-bottom:18px}
+.field label,.field .lb{display:block;font-weight:800;margin-bottom:8px}
+.field input[type=text],.field textarea{width:100%;min-height:48px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{min-height:44px;border-radius:999px;border:2px solid var(--line);background:var(--surface);padding:0 16px;font-weight:700}
+.chips button.on{border-color:var(--primary);background:var(--primary);color:#fff}
+.form-actions{display:grid;gap:10px;margin-top:8px}
+@media (min-width:700px){.form-actions{grid-template-columns:1fr 1fr}}
+.pending{display:inline-block;background:var(--warn-bg);color:var(--warn-ink);font-weight:800;font-size:.8rem;border-radius:8px;padding:3px 9px}
+.done{display:inline-block;background:var(--ok-bg);color:var(--ok-ink);font-weight:800;font-size:.8rem;border-radius:8px;padding:3px 9px}
+
+/* estado vazio */
+.empty{text-align:center;padding:40px 20px;border:2px dashed var(--line);border-radius:var(--radius);background:var(--surface)}
+.empty .ic{width:88px;height:88px;border-radius:50%;background:#E3EAF1;color:var(--primary);display:grid;place-items:center;margin:0 auto 16px}
+.empty .ic svg{width:44px;height:44px}
+.empty h3{margin:0 0 6px;font-size:1.3rem}
+.empty p{margin:0 auto 20px;color:var(--muted);max-width:34ch}
+
+/* medições / admin */
+.row-card{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.row-card .t{font-weight:800}
+.row-card .s{font-size:.85rem;color:var(--muted)}
+.money{font-size:1.5rem;font-weight:900;white-space:nowrap}
+.menu-list{display:grid;gap:10px}
+.menu-list button{display:flex;align-items:center;gap:14px;min-height:64px;background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:0 16px;font-weight:800;font-size:1.05rem;text-align:left}
+.menu-list svg{width:28px;height:28px;color:var(--primary)}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + 18px);transform:translate(-50%,20px);background:var(--ink);color:#fff;font-weight:800;padding:14px 22px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (min-width:900px){.toast{bottom:28px}}
+.screen{display:none}
+.screen.on{display:block}
+.note{font-size:.8rem;color:var(--muted);margin-top:24px}
+
+/* =========================================================
+   LAYOUT "CANTEIRO" — blocos cheios, número gigante, leitura de relance
+   ========================================================= */
+:root{
+  --cond:"Barlow Condensed","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --mono:"JetBrains Mono",Consolas,"Courier New",monospace;
+  --slate:#3A566F;
+}
+.topbar h1,.section-title,.btn,.chip,.alert .l,.back,.bottomnav button,.sidebar nav button,.brand,.stat .k,.kpi .k,.frente .t,.obra h3,.row-card .t,.menu-list button,.rest-item .h{font-family:var(--cond)}
+.kpi .k,.stat .k,.frente .s,.frente .days .u,.row-card .s,.rest-item .m,.alert .l,.cli,.who,.pbar small,.timeline .x,.legend{font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;font-size:.72rem;font-weight:700}
+
+/* cabeçalho em bloco escuro */
+.topbar{background:var(--ink);color:#fff;margin:-16px -16px 18px;padding:18px 16px;border-radius:0}
+.topbar h1{font-size:2.1rem;text-transform:uppercase;letter-spacing:.01em;line-height:1;font-weight:800}
+.topbar .who{color:#9FB6CA}
+.topbar .who b{color:#fff;font-family:var(--cond);font-size:1.15rem;text-transform:uppercase}
+.topbar .btn{background:var(--accent);border-color:var(--accent);color:var(--ink);text-transform:uppercase;letter-spacing:.04em;font-size:1.1rem}
+.topbar .chip{background:var(--accent);color:var(--ink)}
+.topbar div div{color:#9FB6CA!important}
+@media (min-width:900px){.topbar{margin:0 0 22px;border-radius:var(--radius);padding:22px 26px}.topbar h1{font-size:2.6rem}}
+
+.section-title{font-size:1.05rem;letter-spacing:.22em;color:var(--ink);font-weight:800;display:flex;align-items:center;gap:12px}
+.section-title::after{content:"";flex:1;height:3px;background:var(--ink);opacity:.15}
+.btn{text-transform:uppercase;letter-spacing:.04em;font-size:1.1rem}
+.select{border-color:var(--ink);font-weight:700}
+
+/* alertas = blocos cheios, rótulo à esquerda, número gigante à direita */
+.alerts{grid-template-columns:1fr;gap:0}
+.alert{flex-direction:row;align-items:center;justify-content:space-between;min-height:92px;border:0;border-radius:0;padding:10px 18px;color:#fff;background:var(--primary)}
+.alert:first-child{border-radius:var(--radius) var(--radius) 0 0}
+.alert:last-child{border-radius:0 0 var(--radius) var(--radius)}
+.alert .l{order:1;color:inherit;font-family:var(--cond);font-size:1.45rem;line-height:1.05;text-transform:uppercase;letter-spacing:.03em;max-width:60%}
+.alert .n{order:2;font-family:var(--cond);font-size:4.4rem;font-weight:800;line-height:1;color:inherit}
+.alert.bad{background:var(--alert)} .alert.bad .n{color:#fff}
+.alert:nth-child(2).bad{background:#A93232}
+.alert.warn{background:var(--accent);color:var(--ink)} .alert.warn .n{color:var(--ink)}
+.alert:nth-child(4){background:var(--primary);color:#fff} .alert:nth-child(4) .n{color:#fff}
+.alert.on{box-shadow:inset 0 0 0 4px #fff}
+@media (min-width:900px){
+  .alerts{grid-template-columns:1fr 1fr;gap:12px}
+  .alert,.alert:first-child,.alert:last-child{border-radius:var(--radius);min-height:110px}
+}
+
+/* cartão de obra: faixa escura + três blocos de número */
+.card.obra{padding:0;gap:0;border:2px solid var(--ink);overflow:hidden;grid-template-columns:1fr 104px}
+.obra > div:first-child{background:var(--ink);color:#fff;padding:14px 16px}
+.obra h3{font-size:1.6rem;text-transform:uppercase;line-height:1.05;font-weight:800;margin-bottom:4px}
+.obra .cli{color:#9FB6CA;margin-bottom:10px}
+.obra .photo{border-radius:0;min-height:100%}
+.kpis{gap:0;margin:0}
+.kpi{padding:12px 12px 14px;color:#fff}
+.kpi:nth-child(1){background:var(--primary)} .kpi:nth-child(2){background:var(--slate)}
+.kpi:has(.v.neg){background:var(--alert)} .kpi:has(.v.warnv){background:var(--accent);color:var(--ink)}
+.kpi .v{font-family:var(--cond);font-size:3rem;font-weight:800;line-height:1;color:inherit!important}
+.kpi .k{color:inherit;opacity:.9;margin-top:4px}
+.obra-foot{padding:12px 16px;margin:0;border-top:0;background:var(--surface);font-size:.92rem}
+.obra .chip{background:var(--accent);color:var(--ink)}
+.obra .chip.bad{background:var(--alert);color:#fff}
+
+/* frentes = pendências: bloco branco com barra escura; atrasada = bloco vermelho */
+.frente{border:0;border-left:8px solid var(--ink);border-radius:0;padding:14px 16px;background:var(--surface);box-shadow:0 1px 0 var(--line)}
+.frente .t{font-size:1.45rem;line-height:1.05;font-weight:700}
+.frente .s{margin-top:5px;color:var(--muted)}
+.frente .days .n{font-family:var(--cond);font-size:3.4rem;font-weight:800}
+.frente.warn{border-left-color:var(--accent)} .frente.ok{border-left-color:var(--ink)} .frente.neutral{border-left-color:var(--slate)}
+.frente.bad{background:var(--alert);color:#fff;border-left-color:#7E1E1E}
+.frente.bad .s,.frente.bad .meta,.frente.bad .meta *,.frente.bad .days .u,.frente.bad .days .n,.frente.bad .pbar small{color:#fff!important}
+.frente.bad .chip{background:rgba(255,255,255,.22);color:#fff}
+.frente.bad .tag{background:#fff;color:var(--bad-ink)}
+.frente.bad .pbar .tr{background:rgba(255,255,255,.3)}
+.frente.bad .pbar .tr i{background:#fff} .frente.bad .pbar .tr u{background:var(--ink)}
+@media (min-width:900px){.frente{border-radius:0}.flist{gap:8px}}
+
+/* detalhe: números em bloco cheio */
+.stat{border:0;border-left:8px solid var(--ink);border-radius:0;padding:14px 16px}
+.stat .v{font-family:var(--cond);font-size:3.4rem;font-weight:800}
+.stat.bad{background:var(--alert);border-left-color:#7E1E1E} .stat.bad .v,.stat.bad .k{color:#fff}
+.stat.warn{background:var(--accent);border-left-color:#9A6200} .stat.warn .v,.stat.warn .k{color:var(--ink)}
+.back{font-size:1.15rem;text-transform:uppercase;letter-spacing:.04em}
+.back svg{width:22px;height:22px;flex:none}
+.card,.rest-item,.row-card,.menu-list button{border-width:2px;border-color:var(--ink);border-radius:0}
+.row-card .t,.rest-item .h{font-size:1.25rem}
+.stepper .val{font-family:var(--cond);font-size:4rem}
+.stepper button{border-color:var(--ink);color:var(--ink);border-radius:0;background:var(--surface)}
+.chips button{border-color:var(--ink);border-radius:0;text-transform:uppercase;font-family:var(--cond);font-size:1.05rem;letter-spacing:.03em}
+.chips button.on{background:var(--ink)}
+.empty{border:3px dashed var(--ink);border-radius:0}
+.empty h3{font-family:var(--cond);text-transform:uppercase;font-size:1.8rem}
+.empty .ic{background:var(--ink);color:var(--accent)}
+
+/* navegação */
+.bottomnav{background:var(--ink);border-top:0;--nav-h:72px;height:72px}
+.bottomnav button{color:#fff;font-size:.95rem;text-transform:uppercase;letter-spacing:.06em}
+.bottomnav button.on{color:var(--accent)}
+.bottomnav button.on::before{background:var(--accent);height:5px}
+.sidebar nav button{font-size:1.15rem;text-transform:uppercase;letter-spacing:.05em}
+.sidebar nav button.on{background:var(--accent);color:var(--ink)}
+.brand{text-transform:uppercase;letter-spacing:.04em;font-size:1.3rem}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-painel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+    <symbol id="i-frentes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="1.4"/></symbol>
+    <symbol id="i-diario" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="i-medicoes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+    <symbol id="i-restricoes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.01"/></symbol>
+    <symbol id="i-mais" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+    <symbol id="i-admin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M18 8v6M15 11h6"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-helmet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18"/><path d="M5 17a7 7 0 0 1 14 0"/><path d="M12 6v5M9 5.5h6"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo"><svg width="24" height="24"><use href="#i-helmet"/></svg></span>Controle de Obras</div>
+    <nav id="sidenav"></nav>
+    <div class="foot"><b>Joedson</b>Coordenador</div>
+  </aside>
+
+  <main class="main">
+
+    <!-- PAINEL -->
+    <section class="screen" id="s-painel">
+      <div class="topbar"><h1>Painel</h1><div class="who"><b>Joedson</b>Coordenador · 04/10/2026</div></div>
+      <div class="filters">
+        <select class="select" id="f-obra" aria-label="Obra"><option value="">Todas as obras</option><option value="u12">Parada Geral Unidade 12</option><option value="t405">Montagem Tanque T-405</option></select>
+        <select class="select" id="f-disc" aria-label="Disciplina"><option value="">Todas as disciplinas</option></select>
+        <select class="select" id="f-resp" aria-label="Responsável"><option value="">Todos os responsáveis</option></select>
+        <select class="select" aria-label="Período do último avanço"><option>Último avanço: qualquer data</option><option>Últimos 3 dias</option><option>Mais de 3 dias atrás</option></select>
+      </div>
+
+      <div class="section-title">O que exige ação hoje</div>
+      <div class="alerts" id="alerts"></div>
+
+      <div class="section-title">Obras</div>
+      <div class="obras" id="obras"></div>
+
+      <div class="section-title">Avanço planejado × real por obra</div>
+      <div class="card"><div class="bars" id="bars"></div>
+        <div class="legend"><span class="p">Planejado</span><span class="r">Real</span></div></div>
+
+      <div class="section-title">Frentes — mais tempo parado primeiro</div>
+      <div class="flist-head"><div>Frente</div><div>Dias sem avanço</div><div>Real × planejado</div><div>Impacto no prazo</div><div>Decidir até</div><div>Responsável</div></div>
+      <div class="flist" id="p-lista"></div>
+    </section>
+
+    <!-- FRENTES -->
+    <section class="screen" id="s-frentes">
+      <div class="topbar"><h1>Frentes</h1><button class="btn" id="nova-frente"><svg><use href="#i-plus"/></svg>Nova frente</button></div>
+      <div class="filters" style="grid-template-columns:1fr">
+        <select class="select" id="fr-obra" aria-label="Obra"><option value="u12">Parada Geral Unidade 12</option><option value="t405">Montagem Tanque T-405</option><option value="util">Ampliação Utilidades (obra nova)</option></select>
+      </div>
+      <div class="flist" id="f-lista" style="margin-top:12px"></div>
+    </section>
+
+    <!-- DETALHE -->
+    <section class="screen" id="s-detalhe"></section>
+
+    <!-- DIÁRIO -->
+    <section class="screen" id="s-diario">
+      <div class="topbar"><h1>Diário de obra</h1><div class="who"><b>Carlos Souza</b>Produção · 04/10/2026</div></div>
+      <div id="d-lista">
+        <p style="margin:0 0 12px;color:var(--muted);font-weight:700">Toque em uma frente para lançar o dia.</p>
+        <div class="flist" id="d-frentes"></div>
+      </div>
+      <div id="d-form" style="display:none"></div>
+    </section>
+
+    <!-- MEDIÇÕES -->
+    <section class="screen" id="s-medicoes">
+      <div class="topbar"><h1>Medições</h1><div class="who"><b>Joedson</b>Coordenador</div></div>
+      <div class="section-title">A medir</div>
+      <div class="row-card"><div><div class="t">Fundação e base</div><div class="s">Tanque T-405 · Civil · concluída em 14/09</div></div><button class="btn accent" data-toast="Abriria o formulário de medição">Medir</button></div>
+      <div class="section-title">Histórico</div>
+      <div class="row-card"><div><div class="t">Fundação e base · 09/2026</div><div class="s">Tanque T-405 · 100% medido · <span class="pending">Rascunho</span></div></div><div class="money">R$ 184.500</div></div>
+      <div class="row-card"><div><div class="t">Troca de válvulas · 08/2026</div><div class="s">Parada U12 · 100% medido · <span class="done">Aprovada</span></div></div><div class="money">R$ 96.300</div></div>
+    </section>
+
+    <!-- RESTRIÇÕES -->
+    <section class="screen" id="s-restricoes">
+      <div class="topbar"><h1>Restrições</h1><button class="btn" data-toast="Abriria o formulário de nova restrição"><svg><use href="#i-plus"/></svg>Nova</button></div>
+      <div class="rest-item"><div class="h"><span>Liberação de permissão de trabalho do forno</span><span class="chip bad">Alta</span></div><div class="m">Parada U12 · Andaimes forno F-101 · Restrição · Aberta · decidir até 06/10 · impacto 4 dias</div></div>
+      <div class="rest-item"><div class="h"><span>Acesso bloqueado pela operação do cliente</span><span class="chip bad">Alta</span></div><div class="m">Parada U12 · Pleito potencial · Aberta · só você e a diretoria veem este tipo</div></div>
+      <div class="rest-item"><div class="h"><span>Revisão do desenho da chapa do fundo</span><span class="chip warn">Média</span></div><div class="m">Tanque T-405 · Montagem do fundo · RFI · Em tratamento · responsável Renata Alves</div></div>
+    </section>
+
+    <!-- MAIS -->
+    <section class="screen" id="s-mais">
+      <div class="topbar"><h1>Mais</h1></div>
+      <div class="menu-list">
+        <button data-go="restricoes"><svg><use href="#i-restricoes"/></svg>Restrições</button>
+        <button data-go="admin"><svg><use href="#i-admin"/></svg>Administração</button>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section class="screen" id="s-admin">
+      <div class="topbar"><h1>Administração</h1><button class="btn" data-toast="Abriria o formulário de nova obra"><svg><use href="#i-plus"/></svg>Nova obra</button></div>
+      <div class="section-title">Conta aguardando liberação</div>
+      <div class="row-card"><div><div class="t">Fábio Reis</div><div class="s">fabio.reis@cliente.com.br · cadastrado hoje</div></div><button class="btn secondary" data-toast="Abriria a escolha de perfil e obras">Liberar</button></div>
+      <div class="section-title">Usuários</div>
+      <div class="row-card"><div><div class="t">Carlos Souza</div><div class="s">Produção · 2 obras</div></div><span class="chip ok">Ativo</span></div>
+      <div class="row-card"><div><div class="t">Paulo Lima</div><div class="s">Planejamento · 2 obras</div></div><span class="chip ok">Ativo</span></div>
+      <div class="row-card"><div><div class="t">Helena Prado</div><div class="s">Diretoria · todas as obras</div></div><span class="chip ok">Ativo</span></div>
+    </section>
+
+    <p class="note">Mockup de visual: nada é gravado. Dados fictícios. Redimensione a janela para ver o menu lateral virar barra inferior.</p>
+  </main>
+</div>
+
+<nav class="bottomnav" id="bottomnav"></nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const OBRAS = {
+  u12:{nome:'Parada Geral Unidade 12',cli:'Petroquímica Exemplo',real:55,plan:61,sem:'bad',semTxt:'Crítica',medido:'R$ 426.300,00',marco:'Término contratual · 30/10'},
+  t405:{nome:'Montagem Tanque T-405',cli:'Siderúrgica Exemplo',real:53,plan:58,sem:'warn',semTxt:'Atenção',medido:'R$ 184.500,00',marco:'Liberação do fundo para teste · 18/10'}
+};
+const F = [
+ {id:1,obra:'u12',nome:'Andaimes forno F-101',disc:'Andaimes',local:'Forno F-101',resp:'Edson Pires',real:90,plan:100,ult:'29/09',dias:5,status:'Parada',motivo:'Falta de liberação',imp:4,dec:'06/10',ini:'01/09',fim:'25/09'},
+ {id:2,obra:'u12',nome:'Troca do trocador E-210',disc:'Mecânica',local:'Casa de bombas',resp:'Luana Matos',real:60,plan:81,ult:'01/10',dias:3,status:'Parada',motivo:'Falta de material',imp:7,dec:'07/10',ini:'08/09',fim:'10/10'},
+ {id:3,obra:'u12',nome:'Tubulação linha L-340',disc:'Tubulação',local:'Rack 3',resp:'Júlio Brandão',real:58,plan:63,ult:'03/10',dias:1,status:'Em andamento',imp:0,dec:null,ini:'15/09',fim:'15/10'},
+ {id:4,obra:'u12',nome:'Pintura estrutura metálica',disc:'Pintura',local:'Estrutura E-1',resp:'Edson Pires',real:45,plan:43,ult:'03/10',dias:1,status:'Em andamento',imp:0,dec:null,ini:'22/09',fim:'20/10'},
+ {id:5,obra:'u12',nome:'Instrumentação painel PC-12',disc:'Instrumentação',local:'Sala elétrica',resp:'Luana Matos',real:20,plan:19,ult:'03/10',dias:1,status:'Em andamento',imp:0,dec:null,ini:'29/09',fim:'25/10'},
+ {id:6,obra:'t405',nome:'Fundação e base',disc:'Civil',local:'Base do tanque',resp:'Júlio Brandão',real:100,plan:100,ult:'14/09',dias:null,status:'Concluída',imp:0,dec:null,ini:'01/08',fim:'15/09'},
+ {id:7,obra:'t405',nome:'Montagem do fundo',disc:'Mecânica',local:'Tanque T-405',resp:'Carlos Souza',real:40,plan:53,ult:'30/09',dias:4,status:'Parada',motivo:'Chuva',imp:3,dec:null,ini:'16/09',fim:'20/10'},
+ {id:8,obra:'t405',nome:'Andaimes do casco',disc:'Andaimes',local:'Casco',resp:'Edson Pires',real:0,plan:10,ult:null,dias:null,status:'Não iniciada',imp:0,dec:null,ini:'01/10',fim:'30/10'},
+ {id:9,obra:'t405',nome:'Marco: liberação do fundo para teste',disc:'Mecânica',local:'Tanque T-405',resp:'Joedson',real:null,plan:null,ult:null,dias:null,status:'Não iniciada',marco:true,imp:0,dec:null,ini:'18/10',fim:'18/10'},
+ {id:10,obra:'t405',nome:'Iluminação do tanque',disc:'Elétrica',local:'Entorno do tanque',resp:'Luana Matos',real:70,plan:70,ult:'03/10',dias:1,status:'Em andamento',imp:0,dec:null,ini:'20/09',fim:'10/10'}
+];
+F.forEach(f=>{
+  f.desv = f.marco ? 0 : f.real - f.plan;
+  if(f.status==='Parada' || (f.desv<=-10)) f.sem='bad';
+  else if(f.status==='Concluída') f.sem='ok';
+  else if(f.desv<=-5 || f.status==='Não iniciada' && f.plan>0 || f.dias>=1 && f.dias<=2 && f.desv<0) f.sem='warn';
+  else if(f.marco) f.sem='neutral';
+  else f.sem='ok';
+});
+const semLabel={bad:'Atrasada',warn:'Atenção',ok:'Em dia',neutral:'Marco'};
+const statusLabel=f=>f.status==='Parada'?'Parada':f.status==='Concluída'?'Concluída':f.status==='Não iniciada'?'Não iniciada':'Em andamento';
+
+const NAV=[['painel','Painel','i-painel'],['frentes','Frentes','i-frentes'],['diario','Diário','i-diario'],['medicoes','Medições','i-medicoes'],['restricoes','Restrições','i-restricoes'],['admin','Administração','i-admin']];
+const BOTTOM=[['painel','Painel','i-painel'],['frentes','Frentes','i-frentes'],['diario','Diário','i-diario'],['medicoes','Medições','i-medicoes'],['mais','Mais','i-mais']];
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const icon=n=>`<svg><use href="#${n}"/></svg>`;
+
+let current='painel', alertFilter=null;
+function go(name){
+  current=name;
+  $$('.screen').forEach(s=>s.classList.remove('on'));
+  $('#s-'+name).classList.add('on');
+  const topKey = ['restricoes','admin'].includes(name) ? 'mais' : (name==='detalhe'?'frentes':name);
+  $$('#sidenav button').forEach(b=>b.classList.toggle('on', b.dataset.go===(name==='detalhe'?'frentes':name)));
+  $$('#bottomnav button').forEach(b=>b.classList.toggle('on', b.dataset.go===topKey));
+  window.scrollTo(0,0);
+}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2200)}
+
+$('#sidenav').innerHTML=NAV.map(([k,l,i])=>`<button data-go="${k}">${icon(i)}${l}</button>`).join('');
+$('#bottomnav').innerHTML=BOTTOM.map(([k,l,i])=>`<button data-go="${k}">${icon(i)}${l}</button>`).join('');
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]'); if(g){go(g.dataset.go);return}
+  const t=e.target.closest('[data-toast]'); if(t){toast(t.dataset.toast)}
+});
+
+/* filtros */
+const uniq=a=>[...new Set(a)];
+uniq(F.map(f=>f.disc)).forEach(d=>$('#f-disc').insertAdjacentHTML('beforeend',`<option>${d}</option>`));
+uniq(F.map(f=>f.resp)).forEach(d=>$('#f-resp').insertAdjacentHTML('beforeend',`<option>${d}</option>`));
+['#f-obra','#f-disc','#f-resp'].forEach(s=>$(s).addEventListener('change',()=>{renderPainel()}));
+
+function frenteHTML(f, opts={}){
+  const dias = f.dias===null ? '—' : f.dias;
+  const pb = f.marco ? `<div class="pbar"><small>Marco em ${f.fim}</small></div>` :
+   `<div class="pbar"><div class="tr"><i style="width:${f.real}%"></i><u style="left:calc(${f.plan}% - 1px)"></u></div><small>Real ${f.real}% · planejado ${f.plan}% ${f.desv<0?`· <span class="neg">${f.desv} pts</span>`:''}</small></div>`;
+  const dec = f.dec ? `<span class="c-dec">${f.dec}</span>` : '<span class="c-dec" style="color:var(--muted)">—</span>';
+  const imp = f.imp ? `<span class="c-imp neg">+${f.imp} dias</span>` : '<span class="c-imp" style="color:var(--muted)">—</span>';
+  return `<button class="frente ${f.sem}" data-open="${f.id}">
+    <div><div class="t">${f.nome}</div><div class="s">${opts.noObra?'':OBRAS[f.obra].nome+' · '}${f.disc} · ${f.local}</div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="chip ${f.sem}">${f.status==='Parada'?'Parada':semLabel[f.sem]}</span>${f.motivo?`<span class="tag">${f.motivo}</span>`:''}</div></div>
+    <div class="days"><div class="n">${dias}</div><div class="u">dias sem avanço</div></div>
+    <div class="meta">${pb}${imp}${dec}<span class="c-resp" style="font-size:.88rem">${f.resp}</span></div>
+  </button>`;
+}
+const sortF=(a,b)=>((b.dias??-1)-(a.dias??-1)) || (a.desv-b.desv);
+
+function renderPainel(){
+  const o=$('#f-obra').value, d=$('#f-disc').value, r=$('#f-resp').value;
+  let list=F.filter(f=>(!o||f.obra===o)&&(!d||f.disc===d)&&(!r||f.resp===r));
+  const paradas=F.filter(f=>f.dias>=3).length, crit=2, amedir=1, semdiario=4;
+  const A=[['bad',paradas,'Paradas há 3 dias ou mais','paradas'],['bad',crit,'Restrições críticas abertas','crit'],['warn',amedir,'Concluídas e não medidas','medir'],['warn',semdiario,'Sem diário hoje','semdiario']];
+  $('#alerts').innerHTML=A.map(([c,n,l,k])=>`<button class="alert ${c} ${alertFilter===k?'on':''}" data-alert="${k}"><span class="n">${n}</span><span class="l">${l}</span></button>`).join('');
+  if(alertFilter==='paradas') list=list.filter(f=>f.dias>=3);
+  if(alertFilter==='medir') list=list.filter(f=>f.status==='Concluída');
+  $('#p-lista').innerHTML=list.sort(sortF).map(f=>frenteHTML(f)).join('')||`<div class="empty"><h3>Nenhuma frente com esse filtro</h3><p>Troque o filtro para ver as frentes.</p></div>`;
+  const keys=o?[o]:Object.keys(OBRAS);
+  $('#obras').innerHTML=keys.map(k=>{const b=OBRAS[k],dv=b.real-b.plan;return `<div class="card obra">
+    <div><h3>${b.nome}</h3><div class="cli">${b.cli}</div><span class="chip ${b.sem}">${b.semTxt}</span></div>
+    <div class="photo" title="Foto mais recente">${icon('i-camera')}</div>
+    <div class="kpis"><div class="kpi"><div class="v">${b.real}%</div><div class="k">Avanço real</div></div><div class="kpi"><div class="v">${b.plan}%</div><div class="k">Planejado hoje</div></div><div class="kpi"><div class="v ${dv<=-10?'neg':'warnv'}">${dv}</div><div class="k">Desvio em pontos</div></div></div>
+    <div class="obra-foot"><span>Medição acumulada <b>${b.medido}</b></span><span>Próximo marco <b>${b.marco}</b></span></div></div>`}).join('');
+  $('#bars').innerHTML=keys.map(k=>{const b=OBRAS[k];return `<div class="bar-row"><div class="lab"><span>${b.nome}</span><span>${b.real}% de ${b.plan}%</span></div><div class="track plan"><i style="width:${b.plan}%"></i></div><div class="track real"><i style="width:${b.real}%"></i></div></div>`}).join('');
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-alert]'); if(a){alertFilter=alertFilter===a.dataset.alert?null:a.dataset.alert;
+    if(alertFilter==='crit'||alertFilter==='semdiario'){toast('Abriria a lista de '+(alertFilter==='crit'?'restrições críticas':'frentes sem diário hoje'));alertFilter=null;} renderPainel();return}
+  const o=e.target.closest('[data-open]'); if(o){openFrente(+o.dataset.open)}
+});
+
+/* Frentes */
+function renderFrentes(){
+  const o=$('#fr-obra').value, list=F.filter(f=>f.obra===o).sort(sortF);
+  $('#f-lista').innerHTML= list.length ? list.map(f=>frenteHTML(f,{noObra:true})).join('') :
+   `<div class="empty"><div class="ic">${icon('i-frentes')}</div><h3>Nenhuma frente nesta obra ainda</h3><p>Cadastre a primeira frente de serviço e comece a acompanhar o avanço dia a dia.</p><button class="btn" data-toast="Abriria o formulário de nova frente">${icon('i-plus')}Cadastrar primeira frente</button></div>`;
+}
+$('#fr-obra').addEventListener('change',renderFrentes);
+$('#nova-frente').addEventListener('click',()=>toast('Abriria o formulário de nova frente'));
+
+/* Detalhe */
+const pad=n=>String(n).padStart(2,'0');
+function dayAgo(i){let d=4-i; return d>0? pad(d)+'/10' : pad(30+d)+'/09'}
+function openFrente(id){
+  const f=F.find(x=>x.id===id); if(!f) return;
+  const hist=[];
+  if(f.dias!==null){
+    for(let i=1;i<=5;i++){
+      if(i<f.dias) hist.push(`<li><span class="d">${dayAgo(i)}</span><div><b>Sem avanço</b><div class="x">${f.motivo||'Outro'} · efetivo ${i%2?4:6} pessoas</div></div></li>`);
+      else if(i===f.dias) hist.push(`<li><span class="d">${dayAgo(i)}</span><div><b>Avanço para ${f.real}%</b><div class="x">Efetivo 8 pessoas · ${f.disc==='Andaimes'?'12 andaimes montados':'serviço conforme programado'}</div></div></li>`);
+    }
+  }
+  const cls=f.sem==='bad'?'bad':f.sem==='warn'?'warn':'';
+  $('#s-detalhe').innerHTML=`
+    <button class="back" data-back>${icon('i-back')}Voltar</button>
+    <div class="topbar" style="align-items:flex-start"><div><h1>${f.nome}</h1><div style="color:var(--muted);font-weight:700;margin-top:4px">${OBRAS[f.obra].nome} · ${f.disc} · ${f.local}</div></div><span class="chip ${f.sem}">${f.status}</span></div>
+    <div class="big-stats">
+      <div class="stat ${cls}"><div class="v">${f.dias===null?'—':f.dias}</div><div class="k">dias sem avanço</div></div>
+      <div class="stat"><div class="v">${f.marco?'—':f.real+'%'}</div><div class="k">avanço real · planejado ${f.marco?'—':f.plan+'%'}</div></div>
+      <div class="stat ${f.imp?'bad':''}"><div class="v">${f.imp?'+'+f.imp:'0'}</div><div class="k">dias de impacto no prazo</div></div>
+      <div class="stat ${f.dec?'warn':''}"><div class="v">${f.dec||'—'}</div><div class="k">decidir até</div></div>
+    </div>
+    <div class="two" style="margin-top:14px">
+      <div>
+        <div class="section-title" style="margin-top:8px">Histórico do diário</div>
+        <div class="card">${hist.length?`<ul class="timeline">${hist.join('')}</ul>`:'<div style="color:var(--muted);font-weight:700">Nenhum lançamento ainda.</div>'}</div>
+        <div class="section-title">Fotos da frente</div>
+        <div class="photos"><div class="photo">${icon('i-camera')}</div><div class="photo">${icon('i-camera')}</div><div class="photo">${icon('i-camera')}</div></div>
+      </div>
+      <div>
+        <div class="section-title" style="margin-top:8px">Quem responde</div>
+        <div class="card"><b style="font-size:1.1rem">${f.resp}</b><div style="color:var(--muted);margin-top:2px">Planejado de ${f.ini} a ${f.fim}</div></div>
+        <div class="section-title">Ações</div>
+        <div class="form-actions" style="grid-template-columns:1fr">
+          <button class="btn" data-go="diario">${icon('i-diario')}Lançar diário</button>
+          <button class="btn secondary" data-toast="Abriria o formulário de medição">Medir</button>
+          <button class="btn secondary" data-toast="Abriria o formulário de nova restrição">Nova restrição</button>
+        </div>
+      </div>
+    </div>`;
+  go('detalhe');
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-back]')) go(window._from||'painel') });
+document.addEventListener('click',e=>{ if(e.target.closest('[data-open]')) window._from=current },true);
+
+/* Diário */
+let motivo=null, av=0, ef=8, dFrente=null;
+function renderDiario(){
+  const mine=F.filter(f=>f.status!=='Concluída'&&!f.marco&&['Carlos Souza','Edson Pires','Luana Matos','Júlio Brandão'].includes(f.resp));
+  const lancado=new Set([3,4,10]);
+  mine.sort((a,b)=>lancado.has(a.id)-lancado.has(b.id)||sortF(a,b));
+  $('#d-frentes').innerHTML=mine.map(f=>`<button class="frente ${f.sem}" data-lanc="${f.id}" style="grid-template-columns:1fr auto;min-height:80px">
+    <div><div class="t">${f.nome}</div><div class="s">${OBRAS[f.obra].nome} · ${f.local}</div></div>
+    <div>${lancado.has(f.id)?'<span class="done">Lançado</span>':'<span class="pending">Falta lançar</span>'}</div>
+    <div class="meta" style="grid-column:1/-1"><span>Último avanço: <b>${f.real}%</b></span>${f.dias>=1?`<span class="neg">${f.dias} dias sem avanço</span>`:''}</div></button>`).join('');
+}
+document.addEventListener('click',e=>{const l=e.target.closest('[data-lanc]'); if(l) openDiario(+l.dataset.lanc)});
+function openDiario(id){
+  dFrente=F.find(f=>f.id===id); av=dFrente.real; ef=8; motivo=null;
+  $('#d-lista').style.display='none';
+  const el=$('#d-form'); el.style.display='block';
+  el.innerHTML=`<button class="back" id="d-voltar">${icon('i-back')}Voltar para a lista</button>
+   <div class="card" style="margin-bottom:16px"><b style="font-size:1.15rem">${dFrente.nome}</b><div style="color:var(--muted)">${OBRAS[dFrente.obra].nome} · 04/10/2026</div></div>
+   <div class="field"><span class="lb">Avanço acumulado</span><div class="stepper"><button id="av-" aria-label="Diminuir 1 ponto">−</button><div class="val"><span id="av-v">${av}</span>%<small>anterior: ${dFrente.real}% · não pode diminuir</small></div><button id="av+" aria-label="Aumentar 1 ponto">+</button></div></div>
+   <div class="field"><span class="lb">Efetivo (pessoas)</span><div class="stepper"><button id="ef-" aria-label="Diminuir efetivo">−</button><div class="val"><span id="ef-v">${ef}</span></div><button id="ef+" aria-label="Aumentar efetivo">+</button></div></div>
+   <div class="field"><span class="lb">Houve avanço?</span><div id="houve" class="chip neutral">Não — informe o motivo</div></div>
+   <div class="field" id="mot"><span class="lb">Motivo de não haver avanço</span><div class="chips">${['Chuva','Falta de material','Falta de liberação','Falta de efetivo','Interferência','Retrabalho','Outro'].map(m=>`<button data-m="${m}">${m}</button>`).join('')}</div></div>
+   <div class="field"><label for="obs">Observação</label><textarea id="obs" rows="2" placeholder="Opcional"></textarea></div>
+   <div class="form-actions"><button class="btn secondary" data-toast="Abriria a câmera">${icon('i-camera')}Adicionar foto</button><button class="btn" id="salvar">Salvar lançamento</button></div>`;
+  updHouve();
+  const upd=()=>{ $('#av-v').textContent=av; $('#ef-v').textContent=ef; updHouve() };
+  $('#av-').onclick=()=>{ if(av>dFrente.real){av--;upd()} };
+  $('#av\\+').onclick=()=>{ if(av<100){av++;upd()} };
+  $('#ef-').onclick=()=>{ if(ef>0){ef--;upd()} };
+  $('#ef\\+').onclick=()=>{ ef++;upd() };
+  el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{motivo=b.dataset.m; el.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b))});
+  $('#d-voltar').onclick=closeDiario;
+  $('#salvar').onclick=()=>{ if(av===dFrente.real && !motivo){toast('Informe o motivo de não haver avanço');return} toast('Lançado.'); closeDiario(); };
+}
+function updHouve(){
+  const sim=av>dFrente.real, h=$('#houve'); h.className='chip '+(sim?'ok':'neutral'); h.textContent=sim?'Sim — avanço de '+(av-dFrente.real)+' pontos':'Não — informe o motivo';
+  $('#mot').style.display=sim?'none':'block';
+}
+function closeDiario(){ $('#d-form').style.display='none'; $('#d-lista').style.display='block'; window.scrollTo(0,0) }
+
+renderPainel(); renderFrentes(); renderDiario(); go('painel');
+</script>
+</body>
+</html>
