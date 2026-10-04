@@ -358,3 +358,16 @@ button.obra { cursor: pointer; }
 
 .login .corpo label.lb { font-weight: 800; margin-bottom: -6px; }
 .photo.miniatura .remover { position: absolute; top: 2px; right: 2px; z-index: 1; width: 44px; height: 44px; border: 0; background: transparent; color: #fff; font-size: 1.6rem; text-shadow: 0 0 4px #000; }
+
+/* Diário de Obra (RDO): histórico em cards e formulário em painel que sobe */
+.rdo-card { margin-bottom: var(--sp-3); }
+.rdo-card .cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.rdo-card .dia { font-family: var(--cond); font-size: 1.45rem; font-weight: 700; line-height: 1.05; text-transform: capitalize; }
+.rdo-card .resumo { margin: 8px 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.rdo-card .oc { margin: 8px 0; padding: 8px 12px; background: var(--warn-bg); color: var(--warn-ink); font-weight: 700; }
+.sheet-fundo { position: fixed; inset: 0; background: rgba(43,41,40,.8); z-index: 60; display: flex; align-items: flex-end; justify-content: center; animation: aparece var(--t-rapido) ease-out; }
+.sheet { background: var(--surface); width: min(560px, 100%); max-height: 92vh; overflow-y: auto; padding: 16px 16px calc(16px + var(--safe)); border-radius: var(--radius) var(--radius) 0 0; animation: sobe var(--t-medio) ease-out; }
+.sheet h2 { font-family: var(--cond); font-size: 1.8rem; margin: 0 0 14px; text-transform: uppercase; }
+.sheet .input, .sheet textarea { width: 100%; }
+.field .erro { color: var(--bad-ink); font-weight: 800; margin-top: 6px; }
+@keyframes sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }

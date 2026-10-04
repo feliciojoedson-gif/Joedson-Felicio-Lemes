@@ -5,6 +5,7 @@
 // APP MULTI-OBRA: tudo que é lançamento (frentes, diário, fotos, medições, restrições)
 // sai daqui já recortado por UMA obra. Nenhuma tela recebe dado de duas obras juntas.
 import { supabase } from './supabase.js'
+import { diarios as diariosDeExemplo } from './mockData.js'
 import { caminhoDaFoto, hojeEmBrasilia, legendaDaFoto, veTodasAsObras } from './regras.js'
 
 const MENSAGENS = {
@@ -142,4 +143,19 @@ export async function salvarLancamento(usuario, frente, data, campos, existente)
 export async function rodarAtualizacaoDasFrentes() {
   const { error } = await supabase.rpc('rodar_virada')
   return error ? 'Não consegui rodar a atualização. Tente de novo.' : null
+}
+
+// Diário de Obra (RDO): ainda sem banco. Lê e grava numa lista em memória, que volta ao exemplo
+// ao recarregar a página. Quando a tabela existir, só o miolo destas duas funções muda.
+// ponytail: trocar pelo Supabase, com tabela nova e RLS por obra, como as demais.
+const rdoEmMemoria = [...diariosDeExemplo]
+
+export async function listarRdo(obraId) {
+  return { data: rdoEmMemoria.filter((r) => r.obraId === obraId), erro: null }
+}
+
+export async function salvarRdo(obraId, campos) {
+  const registro = { ...campos, id: Math.max(0, ...rdoEmMemoria.map((r) => r.id)) + 1, obraId }
+  rdoEmMemoria.unshift(registro)
+  return { data: registro, erro: null }
 }

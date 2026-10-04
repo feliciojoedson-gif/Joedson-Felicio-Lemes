@@ -1,0 +1,30 @@
+{
+  "_aviso": "Foto do banco em 04/10/2026. Mudou o banco (migration)? Atualize este arquivo no mesmo lote; o check-schema.mjs compara o código com ele.",
+  "tabelas": {
+    "profiles": ["id", "auth_uid", "nome", "email", "role", "ativo", "created_at"],
+    "obras": ["id", "codigo", "nome", "endereco", "cliente", "numero_contrato", "data_inicio", "data_fim_contratual", "status", "responsavel_id", "created_at"],
+    "obra_membros": ["id", "obra_id", "profile_id", "created_at"],
+    "frentes": ["id", "obra_id", "nome", "disciplina", "local", "responsavel_id", "inicio_planejado", "fim_planejado", "fim_planejado_original", "peso", "eh_marco", "percentual_realizado", "ultimo_avanco_em", "dias_sem_avanco", "status", "saude", "impacto_prazo_dias", "data_limite_decisao", "created_at"],
+    "apontamentos": ["id", "obra_id", "frente_id", "data", "autor_id", "percentual_acumulado", "houve_avanco", "motivo_sem_avanco", "efetivo_qtd", "equipamentos", "observacao", "created_at"],
+    "fotos": ["id", "obra_id", "frente_id", "apontamento_id", "url", "legenda", "visivel_cliente", "autor_id", "tirada_em", "created_at"],
+    "medicoes": ["id", "obra_id", "frente_id", "mes_referencia", "quantidade", "unidade", "percentual_medido", "valor_medido", "status", "evidencia_url", "observacao", "created_at"],
+    "restricoes": ["id", "obra_id", "frente_id", "tipo", "titulo", "descricao", "criticidade", "status", "responsavel_id", "autor_id", "data_limite", "impacto_prazo_dias", "resolvida_em", "created_at"],
+    "auditoria": ["id", "obra_id", "tabela", "registro_id", "acao", "usuario_id", "perfil", "campo", "valor_anterior", "valor_novo", "justificativa", "created_at"]
+  },
+  "views": {
+    "frentes_cliente": ["id", "obra_id", "nome", "local", "disciplina", "inicio_planejado", "fim_planejado", "percentual_realizado", "eh_marco", "peso"],
+    "medicoes_cliente": ["id", "obra_id", "frente_id", "mes_referencia", "quantidade", "unidade", "percentual_medido", "status"],
+    "apontamentos_sem_efetivo": ["id", "obra_id", "frente_id", "data", "autor_id", "percentual_acumulado", "houve_avanco", "motivo_sem_avanco", "equipamentos", "observacao", "created_at"],
+    "perfis_colegas": ["id", "nome", "role"]
+  },
+  "checks": {
+    "obras.status": ["Planejamento", "Ativa", "Suspensa", "Encerrada", "Arquivada"],
+    "frentes.disciplina": ["Civil", "Mecânica", "Tubulação", "Elétrica", "Instrumentação", "Andaimes", "Pintura", "Outra"],
+    "frentes.status": ["Não iniciada", "Em andamento", "Parada", "Concluída"],
+    "apontamentos.motivo_sem_avanco": ["Chuva", "Falta de material", "Falta de liberação", "Falta de efetivo", "Interferência", "Retrabalho", "Outro"],
+    "medicoes.status": ["Rascunho", "Enviada", "Aprovada pela Gestão", "Aprovada"],
+    "restricoes.tipo": ["Restrição", "RFI", "Risco", "Pleito potencial"],
+    "restricoes.criticidade": ["Alta", "Média", "Baixa"],
+    "restricoes.status": ["Aberta", "Em tratamento", "Resolvida"]
+  }
+}

@@ -4,6 +4,7 @@ import {
   semaforoDaObra, tiposDeRestricaoVisiveis, estaParadaHa3Dias, concluidaSemMedicao,
   acumuladoAnterior, efetivoSugerido, lancamentoDoDia, validarLancamento,
   tamanhoComprimido, caminhoDaFoto, legendaDaFoto,
+  CLIMAS, errosRdo, ordenarRdo, dataExtensa,
   PERFIS, MENUS, STATUS_OBRA, STATUS_MEDICAO, veTodasAsObras, veTodoODiario, hojeEmBrasilia, viradaAtrasada,
 } from '../src/lib/regras.js'
 import * as mock from '../src/lib/mock.js'
@@ -116,8 +117,20 @@ conferir('caminho começa pela obra (a política do banco lê a primeira pasta)'
 conferir('legenda traz frente e data', legendaDaFoto({ nome: 'Montagem do fundo' }, '2026-10-04'), 'Montagem do fundo · 04/10/2026')
 
 // Menu do celular: no máximo 5 itens
-conferir('coordenador: 4 + Mais', itensDaBarra('Coordenador'), { barra: ['painel', 'frentes', 'diario', 'medicoes', 'mais'], mais: ['restricoes', 'admin', 'perfil'] })
+conferir('coordenador: 4 + Mais', itensDaBarra('Coordenador'), { barra: ['painel', 'frentes', 'diario', 'medicoes', 'mais'], mais: ['restricoes', 'rdo', 'admin', 'perfil'] })
 conferir('cliente: 3 itens, sem Mais', itensDaBarra('Cliente').mais, [])
+
+// Diário de Obra (RDO)
+const rdoOk = { data: '2026-10-04', clima: 'sol', efetivo: '8', atividades: 'Solda do spool 14' }
+conferir('rdo completo é válido', errosRdo(rdoOk), {})
+conferir('rdo sem clima avisa', Object.keys(errosRdo({ ...rdoOk, clima: null })), ['clima'])
+conferir('rdo: efetivo só aceita número', Object.keys(errosRdo({ ...rdoOk, efetivo: '8a' })), ['efetivo'])
+conferir('rdo: efetivo zero é válido', errosRdo({ ...rdoOk, efetivo: '0' }), {})
+conferir('rdo: atividades só com espaços avisa', Object.keys(errosRdo({ ...rdoOk, atividades: '   ' })), ['atividades'])
+conferir('rdo: tem 3 climas', CLIMAS.map((c) => c.id), ['sol', 'nublado', 'chuva'])
+conferir('rdo: mais recente primeiro', ordenarRdo([{ id: 1, data: '2026-10-01' }, { id: 2, data: '2026-10-03' }, { id: 3, data: '2026-10-03' }]).map((r) => r.id), [3, 2, 1])
+conferir('rdo: data não pula dia (sem UTC)', dataExtensa('2026-10-03').includes('03/10/2026'), true)
+conferir('rdo: virada de mês não pula dia', dataExtensa('2026-10-01').includes('01/10/2026'), true)
 
 console.log(`${ok}/${tot} — regras`)
 process.exit(ok === tot ? 0 : 1)

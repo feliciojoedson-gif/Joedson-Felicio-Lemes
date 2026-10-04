@@ -8,6 +8,7 @@ const CAMINHOS = {
   painel: <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,
   frentes: <><path d="M4 6h16M4 12h16M4 18h10" /><circle cx="19" cy="18" r="1.4" /></>,
   diario: <><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z" /><path d="M9 8h6M9 12h6M9 16h3" /></>,
+  rdo: <><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 11h6M9 15h4" /></>,
   medicoes: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   restricoes: <><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17.5v.01" /></>,
   mais: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,

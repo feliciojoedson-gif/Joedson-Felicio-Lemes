@@ -16,10 +16,10 @@ export const STATUS_RESTRICAO = ['Aberta', 'Em tratamento', 'Resolvida']
 // ---------- Menus e permissões ----------
 
 export const MENUS = {
-  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'admin', 'perfil'],
+  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'rdo', 'admin', 'perfil'],
   Planejamento: ['painel', 'frentes', 'medicoes', 'perfil'],
   Engenharia: ['restricoes', 'frentes', 'perfil'],
-  Produção: ['diario', 'frentes', 'restricoes', 'perfil'],
+  Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'perfil'],
   Medição: ['medicoes', 'frentes', 'perfil'],
   'Custos e Controle': ['painel', 'medicoes', 'perfil'],
   'Gestão Contratual': ['restricoes', 'medicoes', 'frentes', 'perfil'],
@@ -32,6 +32,7 @@ export const ROTULOS = {
   painel: 'Painel',
   frentes: 'Frentes',
   diario: 'Diário',
+  rdo: 'Diário de Obra',
   medicoes: 'Medições',
   restricoes: 'Restrições',
   fotos: 'Fotos',
@@ -270,4 +271,32 @@ export function ordenarRestricoes(lista) {
       peso[a.criticidade] - peso[b.criticidade] ||
       (a.data_limite || '9999').localeCompare(b.data_limite || '9999'),
   )
+}
+
+// Diário de Obra (RDO): registro do dia com clima, equipe, atividades, ocorrências e fotos.
+export const CLIMAS = [
+  { id: 'sol', rotulo: 'Sol', tom: 'warn' },
+  { id: 'nublado', rotulo: 'Nublado', tom: 'neutral' },
+  { id: 'chuva', rotulo: 'Chuva', tom: 'bad' },
+]
+export const climaDe = (id) => CLIMAS.find((c) => c.id === id) || CLIMAS[1]
+
+// Cada campo com problema devolve a mensagem; vazio = formulário válido.
+export function errosRdo({ data, clima, efetivo, atividades }) {
+  const erros = {}
+  if (!data) erros.data = 'Informe a data.'
+  if (!CLIMAS.some((c) => c.id === clima)) erros.clima = 'Escolha o clima do dia.'
+  if (!/^\d+$/.test(String(efetivo).trim())) erros.efetivo = 'Informe quantas pessoas trabalharam (só número).'
+  if (!String(atividades).trim()) erros.atividades = 'Descreva as atividades do dia.'
+  return erros
+}
+
+// Mais recente primeiro; no mesmo dia, o lançado por último fica em cima.
+export const ordenarRdo = (lista) =>
+  [...lista].sort((a, b) => b.data.localeCompare(a.data) || String(b.id).localeCompare(String(a.id), 'pt-BR', { numeric: true }))
+
+// Monta a data no fuso local: new Date('AAAA-MM-DD') seria UTC e mostraria o dia anterior.
+export function dataExtensa(iso) {
+  const [a, m, d] = iso.split('-').map(Number)
+  return new Date(a, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
 }
