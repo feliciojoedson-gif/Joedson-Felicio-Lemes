@@ -1,0 +1,176 @@
+/* RELATÓRIOS (BI): gráficos só com CSS e SVG, sem biblioteca. Mobile primeiro; desktop em duas colunas de painéis. */
+.bi {
+  --bi-real: #0E8F8A;
+  --bi-real-fraco: rgba(14, 143, 138, .2);
+  --bi-plan: #8A8481;
+  --bi-plan-fraco: #D9D5D2;
+  --bi-azul: #E4EEF6;
+  --bi-ok: var(--ok);
+  --bi-bad: var(--bad);
+  --bi-s1: #0E8F8A; --bi-s2: #3A3735; --bi-s3: #F5A623; --bi-s4: #C92D16; --bi-s5: #5B5754; --bi-s6: #7BB6B3; --bi-s7: #B8B2AF;
+}
+
+/* ---------- Barra de filtros (fica no topo ao rolar; vale para todos os painéis) ---------- */
+.bi-filtros {
+  position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 2px solid var(--ink);
+  margin: 0 -16px 16px; padding: 10px 16px; display: grid; gap: 10px;
+}
+.bi-filtros .rotulo { display: block; font-family: var(--cond); font-weight: 800; font-size: .95rem; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4px; }
+.bi-filtros .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.bi-filtros .chips button { min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); background: var(--surface); font-family: var(--cond); font-weight: 800; font-size: 1.05rem; }
+.bi-filtros .chips button.on { background: var(--ink); color: #fff; }
+.bi-filtros-ativos { font-size: .85rem; color: var(--muted); font-weight: 700; }
+@media (min-width: 700px) { .bi-filtros { grid-template-columns: minmax(220px, 1fr) auto auto; align-items: end; } }
+@media (min-width: 900px) { .bi-filtros { margin: 0 -36px 20px; padding: 12px 36px; } }
+
+.bi-aviso { border: 2px solid var(--ink); background: var(--warn-bg); color: var(--warn-ink); padding: 10px 14px; margin-bottom: 12px; font-weight: 700; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.bi-nota { font-size: .85rem; color: var(--muted); margin: 0 0 12px; }
+
+/* ---------- Painéis e cartões ---------- */
+.bi-paineis { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .bi-paineis { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } .bi-painel.largo { grid-column: 1 / -1; } }
+.bi-painel { min-width: 0; }
+.bi-painel > h2 { font-family: var(--cond); font-size: 1.7rem; margin: 0 0 10px; text-transform: uppercase; border-bottom: 4px solid var(--brand); padding-bottom: 4px; }
+.bi-painel > h2 small { font-size: .95rem; color: var(--muted); font-weight: 700; margin-left: 8px; text-transform: none; letter-spacing: 0; }
+.bi-card { background: var(--surface); border: 2px solid var(--ink); padding: 14px; margin-bottom: 14px; min-width: 0; }
+.bi-card h3 { font-family: var(--cond); font-size: 1.2rem; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .02em; }
+.bi-card .sub { font-size: .85rem; color: var(--muted); margin: 0 0 10px; }
+.bi-grade { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { .bi-grade.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bi-grade > .bi-card { margin-bottom: 0; }
+.bi-painel > .bi-card + .bi-card, .bi-painel > .bi-grade + .bi-card, .bi-painel > .bi-card + .bi-grade, .bi-painel > .bi-grade + .bi-grade { margin-top: 14px; }
+
+/* ---------- Estado vazio de painel bloqueado ---------- */
+.bi-bloq { border: 3px dashed var(--line); background: var(--surface); padding: 22px 16px; text-align: center; color: var(--muted); }
+.bi-bloq svg { width: 34px; height: 34px; color: var(--slate); }
+.bi-bloq b { display: block; font-family: var(--cond); font-size: 1.3rem; color: var(--ink); margin: 6px 0 2px; }
+.bi-bloq p { margin: 0 auto; max-width: 36ch; }
+.bi-bloq.mini { padding: 12px; border-width: 2px; }
+.bi-bloq.mini svg { width: 24px; height: 24px; }
+.bi-bloq.mini b { font-size: 1.05rem; margin: 2px 0; }
+.bi-bloq.mini p { font-size: .85rem; }
+.bi-sem-dado { padding: 18px 8px; text-align: center; color: var(--muted); font-weight: 700; }
+
+/* ---------- KPIs ---------- */
+.bi-kpi { background: var(--surface); border: 2px solid var(--ink); padding: 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; border-left-width: 8px; }
+.bi-kpi.ok { border-left-color: var(--ok); }
+.bi-kpi.warn { border-left-color: var(--warn); }
+.bi-kpi.bad { border-left-color: var(--bad); }
+.bi-kpi .t { font-family: var(--cond); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-size: .95rem; color: var(--muted); }
+.bi-kpi .v { font-family: var(--cond); font-weight: 800; font-size: 2.4rem; line-height: 1.05; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.bi-kpi .v small { font-size: 1.1rem; color: var(--muted); }
+.bi-kpi .s { font-size: .85rem; font-weight: 700; color: var(--muted); }
+.bi-kpi .seta { display: inline-flex; width: 28px; height: 28px; align-self: center; }
+.bi-kpi .seta svg { width: 28px; height: 28px; }
+.bi-kpi .seta.sobe { color: var(--ok); }
+.bi-kpi .seta.desce { color: var(--bad); }
+
+/* ---------- Gráficos com rolagem horizontal quando precisam ---------- */
+.bi-rolagem { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.bi-rolagem svg { display: block; }
+.bi-legenda { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 0 0; padding: 0; list-style: none; font-size: .85rem; font-weight: 700; }
+.bi-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.bi-legenda i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex: none; }
+.bi-legenda i.linha { height: 4px; width: 20px; border-radius: 2px; }
+
+/* ---------- Donut (conic-gradient + furo) ---------- */
+.bi-donut-caixa { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.bi-donut { width: 168px; height: 168px; border-radius: 50%; position: relative; flex: none; }
+.bi-donut::after { content: ""; position: absolute; inset: 26px; background: var(--surface); border-radius: 50%; }
+.bi-donut .centro { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; text-align: center; font-family: var(--cond); font-weight: 800; line-height: 1; }
+.bi-donut .centro b { font-size: 2.3rem; display: block; }
+.bi-donut .centro span { font-size: .8rem; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.bi-donut-caixa .bi-legenda { flex-direction: column; gap: 6px; margin: 0; }
+
+/* ---------- Barras horizontais ---------- */
+.bi-barras { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bi-barras li { display: grid; grid-template-columns: minmax(90px, 36%) minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.bi-barras .rot { font-weight: 700; font-size: .9rem; line-height: 1.15; overflow-wrap: anywhere; }
+.bi-barras .trilho { height: 20px; background: var(--bi-plan-fraco); border-radius: 4px; overflow: hidden; }
+.bi-barras .enchimento { display: block; height: 100%; border-radius: 4px; min-width: 2px; }
+.bi-barras .val { font-family: var(--cond); font-size: 1.15rem; min-width: 3.2ch; text-align: right; white-space: nowrap; }
+
+/* ---------- PPC semanal (barras empilhadas) ---------- */
+.bi-ppc { display: flex; gap: 10px; align-items: flex-end; padding: 4px 2px 2px; min-width: min-content; }
+.bi-ppc .col { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 52px; flex: none; }
+.bi-ppc .pilha { width: 100%; height: 170px; display: flex; flex-direction: column; border: 2px solid var(--ink); background: var(--bi-plan-fraco); }
+.bi-ppc .ok { background: var(--ok); }
+.bi-ppc .nao { background: var(--bad); }
+.bi-ppc .pilha span { display: grid; place-items: center; color: #fff; font-family: var(--cond); font-weight: 800; font-size: .95rem; min-height: 0; overflow: hidden; }
+.bi-ppc .pc { font-family: var(--cond); font-weight: 800; font-size: 1.05rem; }
+.bi-ppc .dt { font-size: .75rem; font-weight: 700; color: var(--muted); }
+.bi-resumo { display: flex; gap: 18px; flex-wrap: wrap; margin: 10px 0 0; font-size: .9rem; font-weight: 700; }
+.bi-resumo b { font-family: var(--cond); font-size: 1.2rem; }
+
+/* ---------- Mini-cards (fluxo dos contratos, pedidos por etapa) ---------- */
+.bi-minis { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 600px) { .bi-minis.cinco { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bi-mini { border: 2px solid var(--ink); padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; background: var(--bg); }
+.bi-mini .t { font-family: var(--cond); font-weight: 800; font-size: .9rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); line-height: 1.1; min-height: 2.2em; font-size: .85rem; }
+.bi-mini .n { font-family: var(--cond); font-size: 2.2rem; line-height: 1; }
+.bi-mini .s { font-size: .82rem; font-weight: 700; color: var(--muted); overflow-wrap: anywhere; }
+.bi-mini .s.bad { color: var(--bad-ink); }
+
+/* ---------- Tabela e barra de progresso na célula ---------- */
+.bi-tabela { width: 100%; border-collapse: collapse; min-width: 480px; }
+.bi-tabela th { text-align: left; font-family: var(--cond); text-transform: uppercase; letter-spacing: .04em; font-size: .9rem; border-bottom: 2px solid var(--ink); padding: 6px 8px; }
+.bi-tabela td { padding: 8px; border-bottom: 1px solid var(--line); font-weight: 700; }
+.bi-tabela .d { text-align: right; white-space: nowrap; }
+.bi-progresso { display: flex; align-items: center; gap: 8px; min-width: 130px; }
+.bi-progresso .trilho { flex: 1; height: 14px; background: var(--bi-plan-fraco); border-radius: 4px; overflow: hidden; }
+.bi-progresso .enchimento { display: block; height: 100%; background: var(--bi-real); }
+.bi-progresso b { font-family: var(--cond); min-width: 3.4ch; text-align: right; }
+
+/* ---------- Materiais: atrasados, lead time, colunas ---------- */
+.bi-lead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.bi-lead b { font-family: var(--cond); font-size: 2.6rem; line-height: 1; }
+.bi-lead span { font-weight: 700; color: var(--muted); font-size: .9rem; }
+.bi-atrasados.tem { background: var(--bad-bg); border-color: var(--bad); }
+.bi-atrasados.tem .bi-lead b { color: var(--bad-ink); }
+.bi-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.bi-lista li { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); padding: 8px 10px; }
+.bi-lista small { display: block; color: var(--muted); font-weight: 700; }
+.bi-lista em { font-style: normal; margin-left: 8px; font-size: .8rem; padding: 1px 8px; }
+.bi-colunas { display: flex; gap: 14px; align-items: flex-end; justify-content: space-around; max-width: 360px; }
+.bi-colunas .col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.bi-colunas .barra { height: 90px; width: 100%; max-width: 44px; display: flex; align-items: flex-end; background: var(--bi-plan-fraco); }
+.bi-colunas .barra span { width: 100%; background: var(--bi-real); display: block; }
+.bi-colunas .col b { font-family: var(--cond); font-size: 1.1rem; }
+.bi-colunas .dt { font-size: .75rem; font-weight: 700; color: var(--muted); }
+.bi-colunas.duplas { margin-top: 12px; }
+.bi-colunas .par { display: flex; gap: 4px; align-items: flex-end; height: 90px; width: 100%; max-width: 56px; }
+.bi-colunas .par i { flex: 1; display: block; min-height: 2px; }
+.bi-variacao { margin: 10px 0 0; font-weight: 800; }
+.bi-variacao.bad { color: var(--bad-ink); }
+.bi-variacao.ok { color: var(--ok-ink); }
+.bi-card .sub + .bi-colunas { margin-top: 4px; }
+
+/* ---------- Treemap de pendências ---------- */
+.bi-treemap { display: flex; flex-wrap: wrap; gap: 4px; }
+.bi-treemap .bloco { min-width: 96px; padding: 8px; border: 2px solid var(--ink); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; color: var(--ink); }
+.bi-treemap .bloco b { font-family: var(--cond); font-size: 1.8rem; line-height: 1; }
+.bi-treemap .bloco span { font-weight: 800; font-size: .85rem; overflow-wrap: anywhere; }
+
+/* ---------- Impressão ---------- */
+.bi-print-cab, .bi-print-rodape { display: none; }
+@media print {
+  @page { size: A4; margin: 12mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  .bi-print-cab { display: block; text-align: center; border-bottom: 3px solid #E1371E; margin-bottom: 14px; padding-bottom: 8px; }
+  .bi-print-cab .empresa { font-family: var(--cond); font-size: 1.1rem; font-weight: 800; letter-spacing: .08em; }
+  .bi-print-cab h1 { font-family: var(--cond); font-size: 1.9rem; margin: 2px 0; text-transform: uppercase; }
+  .bi-print-cab p { margin: 2px 0; font-size: .9rem; }
+  .bi-print-rodape { display: block; text-align: center; margin-top: 18px; padding-top: 8px; border-top: 1px solid var(--line); font-size: .8rem; color: var(--muted); }
+  .bi-paineis { display: block; }
+  .bi-painel { break-inside: avoid; page-break-inside: avoid; margin-bottom: 18px; }
+  .bi-card, .bi-kpi, .bi-bloq { break-inside: avoid; page-break-inside: avoid; }
+  .bi-rolagem { overflow: visible; }
+  .bi-donut { width: 130px; height: 130px; }
+  .bi-rolagem svg { max-width: 100%; height: auto; }
+  .bi-ppc { flex-wrap: wrap; }
+  .bi-tabela { min-width: 0; }
+  .bi-painel > h2 { break-after: avoid; page-break-after: avoid; }
+}

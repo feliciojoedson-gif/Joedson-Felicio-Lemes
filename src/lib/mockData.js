@@ -28,6 +28,23 @@ export const diarios = [
     ocorrencias: '', fotos: [foto('#5B5754', 'Chapas do fundo')] },
 ]
 
+// Histórico do Diário de Obra (setembro): clima variado e dias de chuva com pouca gente, para o BI de Relatórios nascer com história.
+const rdo = (id, obraCodigo, data, clima, efetivo, atividades, ocorrencias = '') => ({ id, obraCodigo, data, clima, efetivo, atividades, ocorrencias, fotos: [] })
+diarios.push(
+  rdo(6, 'U12', '2026-09-29', 'nublado', 7, 'Instalação das prumadas do banheiro e conferência do traçado das tubulações.'),
+  rdo(7, 'U12', '2026-09-28', 'chuva', 3, 'Serviços externos suspensos; equipe organizou o canteiro e separou materiais.', 'Chuva o dia todo: frentes externas paradas.'),
+  rdo(8, 'U12', '2026-09-25', 'sol', 10, 'Retirada de revestimentos concluída e início da remoção de louças.'),
+  rdo(9, 'U12', '2026-09-24', 'sol', 9, 'Quebra de revestimento da cozinha e retirada de entulho em caçambas.'),
+  rdo(10, 'U12', '2026-09-23', 'chuva', 4, 'Apenas serviços internos de pequeno porte; entulho represado no pátio.', 'Chuva forte à tarde: caçamba não pôde sair.'),
+  rdo(11, 'U12', '2026-09-22', 'nublado', 8, 'Remoção de esquadrias de alumínio e proteção dos pisos já executados.'),
+  rdo(12, 'U12', '2026-09-21', 'sol', 9, 'Início da remoção de louças e acessórios dos banheiros.'),
+  rdo(13, 'U12', '2026-09-18', 'nublado', 8, 'Instalação de caixas de passagem e conferência dos pontos elétricos.'),
+  rdo(14, 'U12', '2026-09-17', 'chuva', 5, 'Frente interna mantida com equipe reduzida; frente externa parada.', 'Chuva intermitente: terraço sem condições de trabalho.'),
+  rdo(15, 'U12', '2026-09-16', 'sol', 10, 'Demolição de paredes internas concluída e limpeza geral das áreas.'),
+  rdo(16, 'T405', '2026-10-02', 'chuva', 2, 'Trabalho no tanque suspenso; apenas vigilância e conferência de materiais.', 'Chuva: trabalho a quente proibido.'),
+  rdo(17, 'T405', '2026-10-01', 'sol', 6, 'Isolamento e sinalização da área do tanque T-405.'),
+)
+
 // Materiais (Kanban de pedidos). `obraCodigo` é o código da obra (U12, T405): os ids do banco real não são os do mock. "Hoje" no exemplo = 2026-10-04.
 export const materiaisCatalogo = [
   { id: 1, nome: 'Cimento CP-II (saco 50 kg)', unidade: 'sacos', categoria: 'grosso' },
@@ -264,10 +281,16 @@ export const modelosFvs = [
   ] },
 ]
 
+// Empresa de cada pessoa que aparece nas vistorias, NCs e observações do Gemba (o filtro por empresa dos Relatórios lê `empresa`).
+const EMPRESA_DE = {
+  'Carlos Menezes': 'Metalúrgica Alfa', 'Rafael Lima': 'Metalúrgica Alfa', 'Juliana Prado': 'Pinturas Beta',
+  'Ricardo Lopes': 'Elétrica Gama', 'Ana Souza': 'Elétrica Gama',
+}
+
 const vistoriaMock = (id, obraCodigo, modeloId, ambiente, status, respostas, extra) => {
   const m = modelosFvs.find((x) => x.id === modeloId)
   return { id, obraCodigo, modeloId, modeloCodigo: m.codigo, modeloNome: m.nome, versao: m.versao, ambiente, grupos: structuredClone(m.grupos),
-    respostas, status, concluidaEm: '', ...extra }
+    respostas, status, concluidaEm: '', empresa: EMPRESA_DE[extra.criadaPor], ...extra }
 }
 
 export const vistoriasDeExemplo = [
@@ -285,7 +308,7 @@ export const vistoriasDeExemplo = [
 const ncMock = (o) => ({ fotos: [], fechadaEm: '', ...o })
 export const ncsDeExemplo = [
   ncMock({ id: 1, obraCodigo: 'U12', codigo: 'NC-001', vistoriaId: 1, itemId: 205, itemNumero: '2.2', titulo: 'Juntas uniformes e alinhadas',
-    servico: 'Revestimento Cerâmico', ambiente: 'Cozinha · Térreo', severidade: 'Baixa', responsavel: 'Carlos Menezes',
+    servico: 'Revestimento Cerâmico', ambiente: 'Cozinha · Térreo', severidade: 'Baixa', responsavel: 'Carlos Menezes', empresa: EMPRESA_DE['Carlos Menezes'],
     descricao: 'Juntas com largura irregular na parede da pia.', solucao: 'Refazer o alinhamento das 6 peças e rejuntar.',
     status: 'fechada', abertaEm: '2026-09-29', fechadaEm: '2026-10-01', fotos: [fotoQ('#E1371E', 'Junta irregular')],
     timeline: [
@@ -295,7 +318,7 @@ export const ncsDeExemplo = [
       { em: '01/10/2026 09:15', texto: 'Aprovada e fechada por Ana Souza' },
     ] }),
   ncMock({ id: 2, obraCodigo: 'U12', codigo: 'NC-002', vistoriaId: 1, itemId: 206, itemNumero: '2.3', titulo: 'Ausência de peças ocas (teste de percussão)',
-    servico: 'Revestimento Cerâmico', ambiente: 'Cozinha · Térreo', severidade: 'Alta', responsavel: 'Carlos Menezes',
+    servico: 'Revestimento Cerâmico', ambiente: 'Cozinha · Térreo', severidade: 'Alta', responsavel: 'Carlos Menezes', empresa: EMPRESA_DE['Carlos Menezes'],
     descricao: 'Som oco em 4 peças do piso, perto da porta.', solucao: 'Remover as peças, recolar com colagem dupla e repetir o teste.',
     status: 'corrigida', abertaEm: '2026-09-29', fotos: [fotoQ('#C92D16', 'Peças ocas')],
     timeline: [
@@ -304,12 +327,12 @@ export const ncsDeExemplo = [
       { em: '03/10/2026 11:30', texto: 'Marcada como corrigida por Carlos Menezes' },
     ] }),
   ncMock({ id: 3, obraCodigo: 'U12', codigo: 'NC-003', vistoriaId: 2, itemId: 103, itemNumero: '1.3', titulo: 'Cantos e arestas arredondados (meia-cana executada)',
-    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Banheiro Social · Térreo', severidade: 'Média', responsavel: 'Juliana Prado',
+    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Banheiro Social · Térreo', severidade: 'Média', responsavel: 'Juliana Prado', empresa: EMPRESA_DE['Juliana Prado'],
     descricao: 'Meia-cana não executada no encontro da parede com o box.', solucao: 'Executar a meia-cana com argamassa polimérica antes da manta.',
     status: 'aberta', abertaEm: '2026-10-02', fotos: [fotoQ('#5B5754', 'Sem meia-cana')],
     timeline: [{ em: '02/10/2026 10:45', texto: 'Aberta por Ricardo Lopes' }] }),
   ncMock({ id: 4, obraCodigo: 'U12', codigo: 'NC-004', vistoriaId: 2, itemId: 105, itemNumero: '2.2', titulo: 'Número de demãos conforme o projeto',
-    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Banheiro Social · Térreo', severidade: 'Alta', responsavel: 'Juliana Prado',
+    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Banheiro Social · Térreo', severidade: 'Alta', responsavel: 'Juliana Prado', empresa: EMPRESA_DE['Juliana Prado'],
     descricao: 'Só 2 demãos aplicadas; o projeto pede 3.', solucao: 'Aplicar a terceira demão cruzada e aguardar a cura.',
     status: 'encaminhada', abertaEm: '2026-10-02', fotos: [],
     timeline: [
@@ -317,7 +340,7 @@ export const ncsDeExemplo = [
       { em: '02/10/2026 11:10', texto: 'Encaminhada para Juliana Prado por Ricardo Lopes' },
     ] }),
   ncMock({ id: 5, obraCodigo: 'T405', codigo: 'NC-001', vistoriaId: 3, itemId: 102, itemNumero: '1.2', titulo: 'Caimento do contrapiso em direção ao ralo conferido',
-    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Piso do tanque · Anel 1', severidade: 'Média', responsavel: 'Rafael Lima',
+    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Piso do tanque · Anel 1', severidade: 'Média', responsavel: 'Rafael Lima', empresa: EMPRESA_DE['Rafael Lima'],
     descricao: 'Caimento invertido em um trecho de 2 m.', solucao: 'Regularizar o trecho com argamassa de nivelamento.',
     status: 'aberta', abertaEm: '2026-10-03', fotos: [],
     timeline: [{ em: '03/10/2026 15:20', texto: 'Aberta por Rafael Lima' }] }),
@@ -328,29 +351,101 @@ const gb = (o) => ({ foto: '', prazo: '', ...o })
 export const gembaDeExemplo = [
   gb({ id: 1, obraCodigo: 'U12', local: 'Rack 3 · Linha L-340', descricao: 'Spool 14 soldado fora da tolerância e cortado de novo duas vezes.',
     causaRaiz: 'Desenho de fabricação desatualizado na bancada.', acao: 'Conferir a revisão do desenho antes de cada corte e fixar a lista de revisões na bancada.',
-    desperdicios: ['Retrabalho'], prazo: '2026-10-02', responsavel: 'Carlos Menezes', status: 'pendente', foto: fotoQ('#C92D16', 'Spool 14 refeito') }),
+    desperdicios: ['Retrabalho'], prazo: '2026-10-02', responsavel: 'Carlos Menezes', empresa: EMPRESA_DE['Carlos Menezes'], status: 'pendente', foto: fotoQ('#C92D16', 'Spool 14 refeito') }),
   gb({ id: 2, obraCodigo: 'U12', local: 'Forno F-101', descricao: 'Equipe parada esperando a permissão de trabalho da operação.',
     causaRaiz: 'Permissão só é emitida às 11h, sem pedido antecipado.', acao: 'Pedir a permissão na véspera, no fim do turno.',
-    desperdicios: ['Espera'], prazo: '2026-10-06', responsavel: 'Juliana Prado', status: 'em_andamento', foto: fotoQ('#E1371E', 'Espera F-101') }),
+    desperdicios: ['Espera'], prazo: '2026-10-06', responsavel: 'Juliana Prado', empresa: EMPRESA_DE['Juliana Prado'], status: 'em_andamento', foto: fotoQ('#E1371E', 'Espera F-101') }),
   gb({ id: 3, obraCodigo: 'U12', local: 'Canteiro · almoxarifado', descricao: 'Tubos levados três vezes entre o almoxarifado e a área de pré-montagem.',
     causaRaiz: 'Área de pré-montagem longe do estoque.', acao: 'Mover a bancada de pré-montagem para perto do almoxarifado.',
-    desperdicios: ['Transporte', 'Movimentação'], prazo: '2026-10-09', responsavel: 'Ricardo Lopes', status: 'pendente', foto: fotoQ('#3A3735', 'Tubos em trânsito') }),
+    desperdicios: ['Transporte', 'Movimentação'], prazo: '2026-10-09', responsavel: 'Ricardo Lopes', empresa: EMPRESA_DE['Ricardo Lopes'], status: 'pendente', foto: fotoQ('#3A3735', 'Tubos em trânsito') }),
   gb({ id: 4, obraCodigo: 'U12', local: 'Pátio de pintura', descricao: 'Latas de tinta acumuladas além do consumo de duas semanas.',
     causaRaiz: 'Compra em lote grande para ganhar desconto.', acao: 'Ajustar o pedido ao consumo semanal.',
-    desperdicios: ['Estoque', 'Superprodução'], prazo: '', responsavel: 'Juliana Prado', status: 'pendente' }),
+    desperdicios: ['Estoque', 'Superprodução'], prazo: '', responsavel: 'Juliana Prado', empresa: EMPRESA_DE['Juliana Prado'], status: 'pendente' }),
   gb({ id: 5, obraCodigo: 'U12', local: 'Painel PC-12', descricao: 'Mesma folha de inspeção preenchida à mão e depois digitada de novo.',
     causaRaiz: 'Não existe formulário digital no celular.', acao: 'Usar o checklist do app direto no campo.',
-    desperdicios: ['Processo desnecessário', 'Retrabalho'], prazo: '2026-10-08', responsavel: 'Ana Souza', status: 'em_andamento' }),
+    desperdicios: ['Processo desnecessário', 'Retrabalho'], prazo: '2026-10-08', responsavel: 'Ana Souza', empresa: EMPRESA_DE['Ana Souza'], status: 'em_andamento' }),
   gb({ id: 6, obraCodigo: 'U12', local: 'Rack 1', descricao: 'Isolamento refeito por falta de proteção contra chuva no trecho.',
     causaRaiz: 'Lona de proteção não foi pedida na programação semanal.', acao: 'Incluir proteção contra chuva na programação de curto prazo.',
-    desperdicios: ['Retrabalho'], prazo: '2026-10-01', responsavel: 'Ricardo Lopes', status: 'resolvido', foto: fotoQ('#2E8B57', 'Lona instalada') }),
+    desperdicios: ['Retrabalho'], prazo: '2026-10-01', responsavel: 'Ricardo Lopes', empresa: EMPRESA_DE['Ricardo Lopes'], status: 'resolvido', foto: fotoQ('#2E8B57', 'Lona instalada') }),
   gb({ id: 7, obraCodigo: 'U12', local: 'Casa de bombas', descricao: 'Soldador volta ao contêiner três vezes por turno buscar ferramenta.',
     causaRaiz: 'Kit de ferramentas incompleto na frente.', acao: 'Montar um kit padrão por frente de solda.',
-    desperdicios: ['Movimentação', 'Espera'], prazo: '2026-10-04', responsavel: 'Carlos Menezes', status: 'pendente' }),
+    desperdicios: ['Movimentação', 'Espera'], prazo: '2026-10-04', responsavel: 'Carlos Menezes', empresa: EMPRESA_DE['Carlos Menezes'], status: 'pendente' }),
   gb({ id: 8, obraCodigo: 'T405', local: 'Costado T-405', descricao: 'Chapas empilhadas esperando o guindaste, que atende outra frente.',
     causaRaiz: 'Um único guindaste para duas frentes.', acao: 'Escalonar o uso do guindaste por horário.',
-    desperdicios: ['Espera'], prazo: '2026-10-07', responsavel: 'Rafael Lima', status: 'pendente', foto: fotoQ('#5B5754', 'Chapas paradas') }),
+    desperdicios: ['Espera'], prazo: '2026-10-07', responsavel: 'Rafael Lima', empresa: EMPRESA_DE['Rafael Lima'], status: 'pendente', foto: fotoQ('#5B5754', 'Chapas paradas') }),
   gb({ id: 9, obraCodigo: 'T405', local: 'Fundo do tanque', descricao: 'Solda de junta repetida por ensaio reprovado.',
     causaRaiz: 'Soldador sem requalificação para a posição.', acao: 'Requalificar o soldador antes da próxima junta.',
-    desperdicios: ['Retrabalho'], prazo: '', responsavel: 'Rafael Lima', status: 'em_andamento' }),
+    desperdicios: ['Retrabalho'], prazo: '', responsavel: 'Rafael Lima', empresa: EMPRESA_DE['Rafael Lima'], status: 'em_andamento' }),
 ]
+
+// ---------- Planejamento com histórico (usado pelos Relatórios) ----------
+// `planejamentoDeExemplo` acima fica intacto: os testes do Planejamento dependem dele exatamente como está.
+// `planejamentoCompleto` = o mesmo exemplo + 9 semanas de histórico da U12 (agosto a outubro, com previsto x real e a linha de base
+// original), causas raiz variadas nas tarefas não realizadas e a `empresa` de cada tarefa (nomes iguais aos dos contratos).
+const atvExtra = (id, titulo, parentId, ordem, inicio, fim, progresso, status, extra = {}) => ({
+  id, titulo, parentId, ordem, inicio, fim, progresso, status, causa: '', causaDetalhe: '', concluidaEm: null, inicioReal: null, fimReal: null,
+  arquivada: false, subtarefas: [], empresa: '', ...extra,
+})
+const concluidaH = (id, titulo, inicio, fim, concluidaEm, empresa = '') =>
+  atvExtra(id, titulo, 13, id, inicio, fim, 100, 'concluida', { concluidaEm, inicioReal: inicio, fimReal: concluidaEm, empresa })
+
+const EMPRESA_DA_ATIVIDADE = {
+  U12: { 2: 'Demol Rápido Serviços', 3: 'Demol Rápido Serviços', 4: 'Demol Rápido Serviços', 6: 'Hidro Reforma Ltda', 7: 'Hidro Reforma Ltda',
+    8: 'Volt Instalações Elétricas', 9: 'Gesso Forte Acabamentos', 11: 'Gesso Forte Acabamentos', 12: 'Tinturas & Cores Ltda' },
+  T405: { 2: 'Concreto Norte Fundações', 3: 'Pintura Industrial Aço Vivo' },
+}
+
+// Grupo 13 (na ordem 5, para não renumerar a EAP que já existia). Várias concluíram depois do previsto: o PPC das semanas fica misto.
+const HISTORICO_U12 = [
+  atvExtra(13, 'Mobilização e preparos', null, 5, '2026-08-10', '2026-10-02', 0, 'a_fazer'),
+  concluidaH(14, 'Tapumes e isolamento', '2026-08-10', '2026-08-12', '2026-08-12', 'Demol Rápido Serviços'),
+  concluidaH(15, 'Ligação provisória de energia', '2026-08-10', '2026-08-14', '2026-08-14', 'Volt Instalações Elétricas'),
+  concluidaH(16, 'Instalação do canteiro e vestiário', '2026-08-17', '2026-08-21', '2026-08-21'),
+  concluidaH(17, 'Proteção de pisos e mobiliário', '2026-08-17', '2026-08-19', '2026-08-26', 'Tinturas & Cores Ltda'),
+  concluidaH(18, 'Levantamento das instalações existentes', '2026-08-24', '2026-08-28', '2026-08-28', 'Volt Instalações Elétricas'),
+  concluidaH(19, 'Locação de caçamba de entulho', '2026-08-24', '2026-08-25', '2026-09-02'),
+  concluidaH(20, 'Demolição de paredes internas', '2026-08-31', '2026-09-04', '2026-09-04', 'Demol Rápido Serviços'),
+  atvExtra(21, 'Retirada do forro antigo', 13, 21, '2026-08-31', '2026-09-03', 60, 'nao_realizado', {
+    causa: 'Clima', causaDetalhe: 'Chuva forte na semana, telhado sem condição de acesso', inicioReal: '2026-09-01', empresa: 'Demol Rápido Serviços',
+  }),
+  concluidaH(22, 'Quebra do contrapiso do banheiro', '2026-09-08', '2026-09-11', '2026-09-11', 'Demol Rápido Serviços'),
+  atvExtra(23, 'Abertura de rasgos para tubulação', 13, 23, '2026-09-08', '2026-09-11', 40, 'nao_realizado', {
+    causa: 'Material', causaDetalhe: 'Disco diamantado não chegou', inicioReal: '2026-09-09', empresa: 'Hidro Reforma Ltda',
+  }),
+  concluidaH(24, 'Reforço da laje do terraço', '2026-09-08', '2026-09-11', '2026-09-16', 'Gesso Forte Acabamentos'),
+  concluidaH(25, 'Instalação das caixas de passagem', '2026-09-14', '2026-09-18', '2026-09-18', 'Volt Instalações Elétricas'),
+  concluidaH(26, 'Quebra do revestimento da cozinha', '2026-09-21', '2026-09-25', '2026-09-24', 'Demol Rápido Serviços'),
+  concluidaH(27, 'Regularização das paredes', '2026-09-28', '2026-10-02', '2026-10-01', 'Gesso Forte Acabamentos'),
+  atvExtra(28, 'Impermeabilização do banheiro suíte', 13, 28, '2026-09-28', '2026-10-02', 50, 'andamento', {
+    inicioReal: '2026-09-29', empresa: 'Tinturas & Cores Ltda',
+    subtarefas: [
+      sub(1, 'Limpar e preparar o substrato', true), sub(2, 'Aplicar o primer', true),
+      subNao(3, 'Primeira demão', 'Clima', 'Chuva: substrato úmido'), subNao(4, 'Segunda demão', 'Clima', 'Chuva: substrato úmido'),
+      subNao(5, 'Teste de estanqueidade', 'Material', 'Manta não entregue'),
+    ],
+  }),
+  atvExtra(29, 'Chapisco das paredes', 13, 29, '2026-10-01', '2026-10-02', 30, 'andamento', {
+    inicioReal: '2026-10-01', empresa: 'Gesso Forte Acabamentos',
+    subtarefas: [
+      sub(1, 'Preparar a argamassa', true),
+      subNao(2, 'Chapisco da sala', 'Mão de obra', 'Faltou um ajudante'), subNao(3, 'Chapisco da cozinha', 'Mão de obra', 'Faltou um ajudante'),
+    ],
+  }),
+]
+
+// Datas originais das tarefas do histórico (linha de base de 10/09): as que fecharam depois do previsto aparecem como "atrasou".
+const BASELINE_HISTORICO_U12 = HISTORICO_U12.map((a) => ({ id: a.id, inicio: a.inicio, fim: a.fim }))
+  .map((i) => ({ ...i, fim: { 21: '2026-09-02', 24: '2026-09-09', 28: '2026-10-01' }[i.id] || i.fim }))
+
+function completo(codigo) {
+  const base = structuredClone(planejamentoDeExemplo[codigo])
+  const empresas = EMPRESA_DA_ATIVIDADE[codigo] || {}
+  base.atividades = base.atividades.map((a) => ({ ...a, empresa: empresas[a.id] || '' }))
+  if (codigo === 'U12') {
+    base.atividades.push(...structuredClone(HISTORICO_U12))
+    base.baseline = { ...base.baseline, itens: [...base.baseline.itens, ...structuredClone(BASELINE_HISTORICO_U12)] }
+  }
+  return base
+}
+
+export const planejamentoCompleto = Object.fromEntries(Object.keys(planejamentoDeExemplo).map((codigo) => [codigo, completo(codigo)]))

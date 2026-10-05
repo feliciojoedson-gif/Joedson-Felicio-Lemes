@@ -5,7 +5,7 @@
 // APP MULTI-OBRA: tudo que é lançamento (frentes, diário, fotos, medições, restrições)
 // sai daqui já recortado por UMA obra. Nenhuma tela recebe dado de duas obras juntas.
 import { supabase } from './supabase.js'
-import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, pendenciasDeExemplo, planejamentoDeExemplo,
+import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, pendenciasDeExemplo, planejamentoCompleto,
   modelosFvs as modelosFvsDeExemplo, vistoriasDeExemplo, ncsDeExemplo, gembaDeExemplo } from './mockData.js'
 import { acrescentarObservacao, aplicarMudanca, errosMudanca, novaPendencia, proximoNumero } from './qualidade.js'
 import {
@@ -284,7 +284,7 @@ const planejamentoEmMemoria = new Map()
 
 function doPlanejamento(obra) {
   if (!planejamentoEmMemoria.has(obra.codigo)) {
-    const exemplo = planejamentoDeExemplo[obra.codigo] || { atividades: [], restricoes: [] }
+    const exemplo = planejamentoCompleto[obra.codigo] || { atividades: [], restricoes: [] }
     planejamentoEmMemoria.set(obra.codigo, { calendario: calendarioPadrao(), baseline: null, ...structuredClone(exemplo) })
   }
   return planejamentoEmMemoria.get(obra.codigo)
@@ -475,4 +475,40 @@ export async function excluirGemba(obra, id) {
   if (i < 0) return { data: null, erro: new Error('observação não encontrada') }
   gembaEmMemoria.splice(i, 1)
   return { data: true, erro: null }
+}
+
+// RELATÓRIOS (BI da obra): só lê. Junta o que cada módulo já tem, sempre de UMA obra, pela mesma porta dos demais.
+// Cada módulo é lido à parte: se um falhar, os outros painéis continuam e o nome dele vai em `falhas`.
+// Módulo que não existe ou está vazio chega como lista vazia: o BI mostra "Painel bloqueado", nunca quebra.
+export async function carregarRelatorio(obra) {
+  const fontes = {
+    atividades: [], calendario: null, baseline: null, rdo: [], pedidos: [], catalogo: [],
+    contratos: [], itensContrato: [], boletins: [], pendencias: [], vistorias: [], ncs: [], gemba: [],
+  }
+  const falhas = []
+  const lerUm = async (nome, pedir, aplicar) => {
+    try {
+      const { data, erro } = await pedir()
+      if (erro || !data) throw erro || new Error('sem retorno')
+      aplicar(data)
+    } catch (_) {
+      falhas.push(nome)
+    }
+  }
+  await Promise.all([
+    lerUm('Planejamento', () => listarPlanejamento(obra), (d) => Object.assign(fontes, { atividades: d.atividades, calendario: d.calendario, baseline: d.baseline })),
+    lerUm('Diário de Obra', () => listarRdo(obra), (d) => { fontes.rdo = d }),
+    lerUm('Materiais', async () => {
+      const [p, c] = await Promise.all([listarPedidos(obra), listarCatalogo()])
+      return { data: p.data && c.data ? { pedidos: p.data, catalogo: c.data } : null, erro: p.erro || c.erro }
+    }, (d) => Object.assign(fontes, d)),
+    lerUm('Contratos e Medições', () => listarContratos(obra), (d) => Object.assign(fontes, { contratos: d.contratos, itensContrato: d.itens, boletins: d.medicoes })),
+    lerUm('Pendências', () => listarPendencias(obra), (d) => { fontes.pendencias = d }),
+    lerUm('FVS', async () => {
+      const [v, n] = await Promise.all([listarVistorias(obra), listarNcs(obra)])
+      return { data: v.data && n.data ? { vistorias: v.data, ncs: n.data } : null, erro: v.erro || n.erro }
+    }, (d) => Object.assign(fontes, d)),
+    lerUm('Gemba Walk', () => listarGemba(obra), (d) => { fontes.gemba = d }),
+  ])
+  return { data: { ...fontes, falhas }, erro: null }
 }

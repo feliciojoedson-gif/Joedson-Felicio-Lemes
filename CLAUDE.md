@@ -117,3 +117,14 @@ Cada função morta é uma mentira que o próximo leitor precisa desmascarar.
 - **Antes de apagar, prove que está morto:** grep pelo símbolo no projeto inteiro, e verifique quem chama o *wrapper*, não só a função.
 - **Estado que nunca muda ou nunca é lido é lixo.**
 - **Limpeza NUNCA toca no banco nem em arquivo de dado.** Tabela ou coluna órfã continua existindo até decisão de quem é dono. Na dúvida, pergunte.
+
+## Módulo Relatórios (BI da obra)
+
+Tela `relatorios` (`src/screens/relatorios.jsx` + `relatorios/{executivo,ritmo,financeiro,materiais,qualidade,graficos,barras}.jsx` e `relatorios.css`; menu: Coordenador, Planejamento, Diretoria, Custos e Controle). **Só lê**: nada grava. Gráficos 100% CSS e SVG, sem biblioteca de gráfico.
+- **Motor adaptativo em `src/lib/biData.js`** (regras puras, `tests/biData.mjs`). **Regra de ouro:** funciona com qualquer combinação de módulos; módulo ausente ou vazio devolve `null` e o card mostra "Painel bloqueado" (`Bloqueado`); se o módulo tem dado e o **filtro** esvaziou, mostra "sem registro" (`modulos` de `modulosDisponiveis`). Nenhuma função devolve NaN.
+- **Leitura pela camada de dados:** `carregarRelatorio(obra)` em `dados.js` lê cada módulo à parte (um falhar não derruba os outros; o nome vai em `falhas`). Módulo novo que alimente o BI: acrescente a leitura ali e a função em `biData.js`; a tela nunca chama o banco.
+- **Filtros cruzados:** empresa e período valem para todos os painéis (`aplicarFiltros`). Empresa filtra atividades, contratos, pendências, vistorias, NCs e Gemba (registros com campo `empresa`); Diário e Materiais são da obra toda. Período só corta o que tem data; saldo e % medido dos contratos ignoram o período (usam `boletinsTodos`).
+- **Mock:** `planejamentoCompleto` (em `mockData.js`) completa o Planejamento da U12 (9 semanas de histórico, causas variadas, `empresa` por tarefa) e só o `dados.js` o usa; `planejamentoDeExemplo` NÃO muda porque os testes do Planejamento dependem dele. Diários extras e `empresa` nas NCs, vistorias e Gemba estão em `mockData.js`.
+- **Estoque é opcional:** arrays `insumos` e `movimentos` em `fontes` ligam o alerta de saldo mínimo e entradas x saídas; sem eles nada aparece (nem card bloqueado). Hoje nenhum módulo os fornece.
+- **Impressão:** botão "Imprimir relatório executivo" (`window.print`), cabeçalho e rodapé só no papel (`.bi-print-cab`, `.bi-print-rodape`), `.no-print` esconde menu e filtros, painéis com `break-inside: avoid`.
+- PPC geral = soma das tarefas feitas / soma das planejadas em todas as semanas. Pareto = só o que está "não realizado" hoje (o app apaga a causa ao concluir).
