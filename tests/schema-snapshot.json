@@ -8,7 +8,8 @@
       "email",
       "role",
       "ativo",
-      "created_at"
+      "created_at",
+      "modulos_desligados"
     ],
     "obras": [
       "id",
@@ -48,7 +49,8 @@
       "saude",
       "impacto_prazo_dias",
       "data_limite_decisao",
-      "created_at"
+      "created_at",
+      "created_by"
     ],
     "apontamentos": [
       "id",
@@ -88,7 +90,8 @@
       "status",
       "evidencia_url",
       "observacao",
-      "created_at"
+      "created_at",
+      "created_by"
     ],
     "restricoes": [
       "id",
@@ -115,7 +118,8 @@
       "modo",
       "valor_total",
       "criado_em",
-      "created_at"
+      "created_at",
+      "created_by"
     ],
     "itens_contrato": [
       "id",
@@ -125,7 +129,8 @@
       "unidade",
       "quantidade",
       "preco_unitario",
-      "created_at"
+      "created_at",
+      "created_by"
     ],
     "boletins_empreiteiro": [
       "id",
@@ -135,7 +140,8 @@
       "data",
       "valor",
       "linhas",
-      "created_at"
+      "created_at",
+      "created_by"
     ],
     "auditoria": [
       "id",

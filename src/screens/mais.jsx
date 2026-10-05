@@ -8,7 +8,7 @@ export default function Mais({ goto }) {
     <>
       <Topo titulo="Mais" />
       <div className="menu-list">
-        {itensDaBarra(usuario.role).mais.map((k) => (
+        {itensDaBarra(usuario.role, usuario.modulos_desligados).mais.map((k) => (
           <button key={k} onClick={() => goto(k)}><Icone nome={k} />{ROTULOS[k]}</button>
         ))}
       </div>

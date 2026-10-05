@@ -12,6 +12,8 @@ const CORS = {
 }
 const PERFIS = ['Coordenador', 'Planejamento', 'Engenharia', 'Produção', 'Medição', 'Custos e Controle', 'Gestão Contratual', 'Cliente', 'Diretoria', 'Administrador']
 const VE_TODAS_AS_OBRAS = ['Coordenador', 'Diretoria', 'Administrador']
+// Módulos de menu que o administrador pode desligar por pessoa (igual ao CHECK profiles_modulos_validos do banco).
+const MODULOS = ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'qualidade', 'relatorios', 'rdo', 'fotos']
 const BANIDO = '876000h' // ~100 anos: bloqueado de fato
 
 class Recusa extends Error {
@@ -96,7 +98,7 @@ async function garantirOutroAdministrador(admin: Cliente, alvo: { id: number; ro
 }
 
 async function listar(admin: Cliente) {
-  const { data: perfis, error } = await admin.from('profiles').select('id, auth_uid, nome, email, role, ativo, created_at').order('nome')
+  const { data: perfis, error } = await admin.from('profiles').select('id, auth_uid, nome, email, role, ativo, modulos_desligados, created_at').order('nome')
   if (error) throw error
   const { data: membros } = await admin.from('obra_membros').select('profile_id, obra_id')
   const logins = new Map<string, { last_sign_in_at: string | null; banned_until: string | null }>()
@@ -106,11 +108,17 @@ async function listar(admin: Cliente) {
     for (const u of data.users) logins.set(u.id, { last_sign_in_at: u.last_sign_in_at ?? null, banned_until: u.banned_until ?? null })
     if (data.users.length < 1000) break
   }
-  return perfis.map((p: { id: number; auth_uid: string; nome: string; email: string; role: string; ativo: boolean }) => ({
-    id: p.id, nome: p.nome, email: p.email, role: p.role, ativo: p.ativo,
+  return perfis.map((p: { id: number; auth_uid: string; nome: string; email: string; role: string; ativo: boolean; modulos_desligados: string[] }) => ({
+    id: p.id, nome: p.nome, email: p.email, role: p.role, ativo: p.ativo, modulosDesligados: p.modulos_desligados,
     ultimoAcesso: logins.get(p.auth_uid)?.last_sign_in_at ?? null,
     obraIds: (membros || []).filter((m: { profile_id: number }) => m.profile_id === p.id).map((m: { obra_id: number }) => m.obra_id),
   }))
+}
+
+function validarModulos(valor: unknown): string[] {
+  if (valor === undefined || valor === null) return []
+  if (!Array.isArray(valor) || valor.some((m) => !MODULOS.includes(String(m)))) throw new Recusa('Módulo desconhecido na lista de módulos.')
+  return [...new Set(valor.map(String))]
 }
 
 async function validarObras(admin: Cliente, perfil: string, obraIds: unknown): Promise<number[]> {
@@ -139,6 +147,7 @@ async function criar(admin: Cliente, corpo: Record<string, unknown>) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Recusa('Informe um e-mail válido.')
   if (!PERFIS.includes(perfil)) throw new Recusa('Escolha o perfil.')
   const obraIds = await validarObras(admin, perfil, corpo.obraIds)
+  const modulosDesligados = validarModulos(corpo.modulosDesligados)
 
   const senha = senhaProvisoria()
   const { data: criado, error } = await admin.auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: { nome } })
@@ -150,7 +159,7 @@ async function criar(admin: Cliente, corpo: Record<string, unknown>) {
   const uid = criado.user.id
   try {
     // O gatilho do banco já criou o perfil como Pendente; aqui ele vira o perfil escolhido, ativo.
-    const { data: perfilCriado, error: e1 } = await admin.from('profiles').update({ role: perfil, nome, ativo: true }).eq('auth_uid', uid).select('id').single()
+    const { data: perfilCriado, error: e1 } = await admin.from('profiles').update({ role: perfil, nome, ativo: true, modulos_desligados: modulosDesligados }).eq('auth_uid', uid).select('id').single()
     if (e1) throw e1
     await gravarObras(admin, perfilCriado.id, obraIds)
     return { perfilId: perfilCriado.id, email, senhaProvisoria: senha }
@@ -173,8 +182,11 @@ async function atualizar(admin: Cliente, alvo: { id: number; role: string; ativo
   if (!PERFIS.includes(novoPerfil)) throw new Recusa('Escolha o perfil.')
   if (alvo.role === 'Coordenador' && novoPerfil !== 'Coordenador') await garantirOutroAdministrador(admin, alvo)
   const obraIds = await validarObras(admin, novoPerfil, corpo.obraIds ?? (await obrasAtuais(admin, alvo.id)))
-  if (novoPerfil !== alvo.role) {
-    const { error } = await admin.from('profiles').update({ role: novoPerfil }).eq('id', alvo.id)
+  const mudanca: Record<string, unknown> = {}
+  if (novoPerfil !== alvo.role) mudanca.role = novoPerfil
+  if (corpo.modulosDesligados !== undefined) mudanca.modulos_desligados = validarModulos(corpo.modulosDesligados)
+  if (Object.keys(mudanca).length) {
+    const { error } = await admin.from('profiles').update(mudanca).eq('id', alvo.id)
     if (error) throw error
   }
   await gravarObras(admin, alvo.id, obraIds)
@@ -220,6 +232,7 @@ const POR_PERFIL: [string, string][] = [
 const POR_LOGIN = [
   'atividades_planejamento', 'restricoes_planejamento', 'planejamento_config', 'materiais_catalogo', 'pedidos_material', 'rdo_registros',
   'qualidade_pendencias', 'fvs_modelos', 'fvs_vistorias', 'fvs_ncs', 'gemba_observacoes',
+  'frentes', 'medicoes', 'contratos_empreiteiro', 'itens_contrato', 'boletins_empreiteiro',
 ]
 async function contarRegistros(admin: Cliente, alvo: { id: number; auth_uid: string }) {
   let total = 0

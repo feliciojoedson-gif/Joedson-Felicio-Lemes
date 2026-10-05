@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Icone, Logo } from '../components/index.jsx'
 import AvatarMenu from '../components/AvatarMenu.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
-import { itensDaBarra, menuDoPerfil, pode, ROTULOS, telaInicial } from '../lib/regras.js'
+import { isModuleVisible, itensDaBarra, menuDoPerfil, pode, ROTULOS, telaInicial } from '../lib/regras.js'
 import Painel from '../screens/painel.jsx'
 import Frentes from '../screens/frentes.jsx'
 import Detalhe from '../screens/detalhe.jsx'
@@ -28,7 +28,8 @@ const TELAS = {
 // Navegação por estado (sem URL): `route` guarda a tela e os parâmetros.
 export default function Shell({ onSair }) {
   const { usuario, obra, obras, trocarObra } = useDados()
-  const [route, setRoute] = useState({ screen: telaInicial(usuario.role), params: {}, de: null })
+  const desligados = usuario.modulos_desligados || []
+  const [route, setRoute] = useState({ screen: telaInicial(usuario.role, desligados), params: {}, de: null })
   const [aviso, setAviso] = useState('')
   const temporizador = useRef(null)
 
@@ -44,13 +45,15 @@ export default function Shell({ onSair }) {
 
   const trocar = (id) => {
     // O detalhe de uma frente é de uma obra só: ao trocar de obra, sai dele.
-    if (route.screen === 'detalhe') goto(route.de || telaInicial(usuario.role))
+    if (route.screen === 'detalhe') goto(route.de || telaInicial(usuario.role, desligados))
     trocarObra(id)
   }
 
-  const { barra, mais } = itensDaBarra(usuario.role)
+  const { barra, mais } = itensDaBarra(usuario.role, desligados)
   // O painel de admin não está nos menus: quem não administra e tenta abri-lo direto volta para o Início.
-  const telaPedida = route.screen === 'admin' && !pode(usuario.role, 'administrar') ? telaInicial(usuario.role) : route.screen
+  // Também volta para o Início quem abre um módulo que o administrador desligou para ele (o 'admin' e o 'detalhe' da frente têm regra própria: o detalhe vale como o módulo Frentes, exceto quando se chega nele pelo Painel).
+  const semAcesso = route.screen === 'admin' ? !pode(usuario.role, 'administrar') : (route.screen === 'detalhe' ? route.de !== 'painel' && !isModuleVisible(desligados, 'frentes') : !isModuleVisible(desligados, route.screen))
+  const telaPedida = semAcesso ? telaInicial(usuario.role, desligados) : route.screen
   const tela = telaPedida === 'detalhe' ? (route.de || 'frentes') : telaPedida
   const destacarNaBarra = (k) => k === tela || (k === 'mais' && mais.includes(tela))
   const Corpo = TELAS[telaPedida]
@@ -60,7 +63,7 @@ export default function Shell({ onSair }) {
       <aside className="sidebar no-print">
         <Logo />
         <nav>
-          {menuDoPerfil(usuario.role).map((k) => (
+          {menuDoPerfil(usuario.role, desligados).map((k) => (
             <button key={k} className={tela === k ? 'on' : ''} onClick={() => goto(k)}>
               <Icone nome={k} />{ROTULOS[k]}
             </button>

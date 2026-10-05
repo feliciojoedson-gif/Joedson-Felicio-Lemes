@@ -113,7 +113,7 @@ function PainelInterno({ goto }) {
   }
 
   const clicarAlerta = (k) => {
-    if (k === 'criticas' && menuDoPerfil(usuario.role).includes('restricoes')) {
+    if (k === 'criticas' && menuDoPerfil(usuario.role, usuario.modulos_desligados).includes('restricoes')) {
       goto('restricoes', { criticidade: 'Alta' })
       return
     }

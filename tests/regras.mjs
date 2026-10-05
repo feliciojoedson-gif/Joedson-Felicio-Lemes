@@ -5,6 +5,7 @@ import {
   acumuladoAnterior, efetivoSugerido, lancamentoDoDia, validarLancamento,
   tamanhoComprimido, caminhoDaFoto, legendaDaFoto,
   CLIMAS, errosRdo, ordenarRdo, dataExtensa,
+  isModuleVisible, menuDoPerfil, modulosDoPerfil, telaInicial, MODULOS_DO_MENU,
   PERFIS, MENUS, STATUS_OBRA, STATUS_MEDICAO, veTodasAsObras, veTodoODiario, hojeEmBrasilia, viradaAtrasada,
 } from '../src/lib/regras.js'
 import * as mock from './fixtures/mock.js'
@@ -131,6 +132,16 @@ conferir('rdo: tem 3 climas', CLIMAS.map((c) => c.id), ['sol', 'nublado', 'chuva
 conferir('rdo: mais recente primeiro', ordenarRdo([{ id: 1, data: '2026-10-01' }, { id: 2, data: '2026-10-03' }, { id: 3, data: '2026-10-03' }]).map((r) => r.id), [3, 2, 1])
 conferir('rdo: data não pula dia (sem UTC)', dataExtensa('2026-10-03').includes('03/10/2026'), true)
 conferir('rdo: virada de mês não pula dia', dataExtensa('2026-10-01').includes('01/10/2026'), true)
+
+// Módulos desligados por pessoa
+conferir('módulo desligado some do menu', menuDoPerfil('Produção', ['materiais']).includes('materiais'), false)
+conferir('os outros módulos continuam', menuDoPerfil('Produção', ['materiais']).includes('diario'), true)
+conferir('sem desligados: menu igual ao do perfil', menuDoPerfil('Produção', []), MENUS['Produção'])
+conferir('Meu perfil nunca some', isModuleVisible(['perfil'], 'perfil'), true)
+conferir('desligados vazio/nulo não esconde nada', [isModuleVisible([], 'qualidade'), isModuleVisible(null, 'qualidade')], [true, true])
+conferir('tela inicial pula o módulo desligado', telaInicial('Produção', ['diario']), 'rdo')
+conferir('barra do celular respeita o desligado', itensDaBarra('Produção', ['diario', 'rdo']).barra.includes('diario'), false)
+conferir('chaves do painel: só módulos de menu do perfil', modulosDoPerfil('Produção').every((k) => MODULOS_DO_MENU.includes(k)) && !modulosDoPerfil('Produção').includes('perfil'), true)
 
 console.log(`${ok}/${tot} — regras`)
 process.exit(ok === tot ? 0 : 1)

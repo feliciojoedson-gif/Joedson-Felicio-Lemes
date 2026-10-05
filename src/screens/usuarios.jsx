@@ -3,7 +3,7 @@ import { Chip, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
 import { adminUsuarios } from '../lib/dados.js'
 import { errosLiberacao, PERFIS_LIBERAVEIS } from '../lib/cadastros.js'
-import { veTodasAsObras } from '../lib/regras.js'
+import { modulosDoPerfil, ROTULOS, veTodasAsObras } from '../lib/regras.js'
 import { Aviso, Folha, useConfirmar } from './planejamento/ui.jsx'
 import { Campo, Opcoes } from './cadastros.jsx'
 
@@ -24,6 +24,23 @@ function EscolhaDeObras({ obras, valor, onTroca, erro }) {
         </label>
       ))}
       <Aviso texto={erro} />
+    </div>
+  )
+}
+
+// Chaves de módulo: ligado = a pessoa vê no menu; desligado = some do menu dela. Só os módulos que o perfil dela já tem.
+function EscolhaDeModulos({ role, desligados, onTroca }) {
+  const modulos = modulosDoPerfil(role)
+  if (!modulos.length) return null
+  const alternar = (k) => onTroca(desligados.includes(k) ? desligados.filter((m) => m !== k) : [...desligados, k])
+  return (
+    <div className="field">
+      <span className="lb">Módulos liberados (desmarque para esconder do menu desta pessoa)</span>
+      {modulos.map((k) => (
+        <label key={k} style={{ display: 'block' }}>
+          <input type="checkbox" checked={!desligados.includes(k)} onChange={() => alternar(k)} /> {ROTULOS[k]}
+        </label>
+      ))}
     </div>
   )
 }
@@ -60,7 +77,7 @@ function SenhaUnica({ titulo, email, senha, onFechar }) {
 }
 
 function FormNovo({ obras, onFechar, onCriado }) {
-  const [c, setC] = useState({ nome: '', email: '', role: '', obraIds: [] })
+  const [c, setC] = useState({ nome: '', email: '', role: '', obraIds: [], modulosDesligados: [] })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [tentou, setTentou] = useState(false)
@@ -75,7 +92,7 @@ function FormNovo({ obras, onFechar, onCriado }) {
     if (Object.keys(erros).length) return
     setEnviando(true)
     setErro('')
-    const { data, erro: falha } = await adminUsuarios('criar', { nome: c.nome.trim(), email: c.email.trim(), role: c.role, obraIds: c.obraIds })
+    const { data, erro: falha } = await adminUsuarios('criar', { nome: c.nome.trim(), email: c.email.trim(), role: c.role, obraIds: c.obraIds, modulosDesligados: c.modulosDesligados })
     setEnviando(false)
     if (falha) return setErro(falha.message)
     onCriado(data)
@@ -91,11 +108,12 @@ function FormNovo({ obras, onFechar, onCriado }) {
             <input id="nu-email" className="input" type="email" autoComplete="off" value={c.email} onChange={(e) => setC({ ...c, email: e.target.value })} />
           </Campo>
           <Campo id="nu-role" rotulo="Perfil" erro={ver('role')}>
-            <select id="nu-role" className="input" value={c.role} onChange={(e) => setC({ ...c, role: e.target.value })}><Opcoes lista={PERFIS_LIBERAVEIS} vazio="Escolha…" /></select>
+            <select id="nu-role" className="input" value={c.role} onChange={(e) => setC({ ...c, role: e.target.value, modulosDesligados: [] })}><Opcoes lista={PERFIS_LIBERAVEIS} vazio="Escolha…" /></select>
           </Campo>
           {c.role && (veTodasAsObras(c.role)
             ? <p className="mono">Este perfil enxerga todas as obras.</p>
             : <EscolhaDeObras obras={obras} valor={c.obraIds} onTroca={(obraIds) => setC({ ...c, obraIds })} erro={ver('obras')} />)}
+          {c.role && <EscolhaDeModulos role={c.role} desligados={c.modulosDesligados} onTroca={(modulosDesligados) => setC({ ...c, modulosDesligados })} />}
           <Aviso texto={erro} />
           <div className="form-actions">
             <button type="button" className="btn" disabled={enviando} onClick={criar}>{enviando ? 'Criando…' : 'Criar usuário'}</button>
@@ -110,7 +128,7 @@ function FormNovo({ obras, onFechar, onCriado }) {
 // Troca o perfil e as obras de uma pessoa (e libera uma conta pendente).
 function FormAcesso({ pessoa, obras, onFechar, onFeito }) {
   const pendente = pessoa.role === 'Pendente'
-  const [c, setC] = useState({ role: pendente ? '' : pessoa.role, obraIds: pessoa.obraIds })
+  const [c, setC] = useState({ role: pendente ? '' : pessoa.role, obraIds: pessoa.obraIds, modulosDesligados: pessoa.modulosDesligados || [] })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [tentou, setTentou] = useState(false)
@@ -120,7 +138,7 @@ function FormAcesso({ pessoa, obras, onFechar, onFeito }) {
     if (Object.keys(erros).length) return
     setEnviando(true)
     setErro('')
-    const { erro: falha } = await adminUsuarios('atualizar', { perfilId: pessoa.id, role: c.role, obraIds: c.obraIds })
+    const { erro: falha } = await adminUsuarios('atualizar', { perfilId: pessoa.id, role: c.role, obraIds: c.obraIds, modulosDesligados: c.modulosDesligados.filter((m) => modulosDoPerfil(c.role).includes(m)) })
     setEnviando(false)
     if (falha) return setErro(falha.message)
     onFeito(pendente ? 'Conta liberada.' : 'Acesso atualizado.')
@@ -131,11 +149,12 @@ function FormAcesso({ pessoa, obras, onFechar, onFeito }) {
         <>
           <p className="mono">{pessoa.email}</p>
           <Campo id="ac-role" rotulo="Perfil" erro={tentou && erros.role}>
-            <select id="ac-role" className="input" value={c.role} onChange={(e) => setC({ ...c, role: e.target.value })}><Opcoes lista={PERFIS_LIBERAVEIS} vazio="Escolha…" /></select>
+            <select id="ac-role" className="input" value={c.role} onChange={(e) => setC({ ...c, role: e.target.value, modulosDesligados: [] })}><Opcoes lista={PERFIS_LIBERAVEIS} vazio="Escolha…" /></select>
           </Campo>
           {c.role && (veTodasAsObras(c.role)
             ? <p className="mono">Este perfil enxerga todas as obras.</p>
             : <EscolhaDeObras obras={obras} valor={c.obraIds} onTroca={(obraIds) => setC({ ...c, obraIds })} erro={tentou && erros.obras} />)}
+          {c.role && <EscolhaDeModulos role={c.role} desligados={c.modulosDesligados} onTroca={(modulosDesligados) => setC({ ...c, modulosDesligados })} />}
           <Aviso texto={erro} />
           <div className="form-actions">
             <button type="button" className="btn" disabled={enviando} onClick={salvar}>{enviando ? 'Salvando…' : pendente ? 'Liberar' : 'Salvar'}</button>
@@ -237,6 +256,7 @@ export default function PainelUsuarios({ avisar }) {
               <div className="t">{p.nome} {eu && <span className="mono">(você)</span>}</div>
               <div className="s">{p.email}</div>
               <div className="s">{pendente ? 'Sem perfil ainda' : p.role} · {codigosDe(p)}</div>
+              {p.modulosDesligados?.length > 0 && <div className="s">Módulos desligados: {p.modulosDesligados.map((k) => ROTULOS[k] || k).join(', ')}</div>}
               <div className="s">Último acesso: {quando(p.ultimoAcesso)}</div>
             </div>
             <Chip tom={tom}>{rotulo}</Chip>

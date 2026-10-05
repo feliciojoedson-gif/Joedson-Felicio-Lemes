@@ -45,12 +45,21 @@ export const ROTULOS = {
   mais: 'Mais',
 }
 
-export const menuDoPerfil = (role) => MENUS[role] || []
-export const telaInicial = (role) => menuDoPerfil(role)[0] || null
+// Módulos que o administrador pode ligar/desligar POR PESSOA (os do menu; "Meu perfil" nunca desliga). O banco só aceita estes nomes.
+export const MODULOS_DO_MENU = ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'qualidade', 'relatorios', 'rdo', 'fotos']
+
+// O módulo aparece para a pessoa? Vale para o menu lateral, a barra do celular e a troca de tela.
+// `desligados` é a lista que o administrador desligou para ESTA pessoa (profiles.modulos_desligados).
+export const isModuleVisible = (desligados, moduloId) => moduloId === 'perfil' || !(desligados || []).includes(moduloId)
+
+export const menuDoPerfil = (role, desligados = []) => (MENUS[role] || []).filter((k) => isModuleVisible(desligados, k))
+export const telaInicial = (role, desligados = []) => menuDoPerfil(role, desligados)[0] || null
+// Módulos que um perfil tem (a base da lista de chaves no painel de admin).
+export const modulosDoPerfil = (role) => (MENUS[role] || []).filter((k) => MODULOS_DO_MENU.includes(k))
 
 // Barra inferior do celular: no máximo 5 itens. Passou disso, os 4 primeiros + "Mais".
-export function itensDaBarra(role) {
-  const todos = menuDoPerfil(role)
+export function itensDaBarra(role, desligados = []) {
+  const todos = menuDoPerfil(role, desligados)
   if (todos.length <= 5) return { barra: todos, mais: [] }
   return { barra: [...todos.slice(0, 4), 'mais'], mais: todos.slice(4) }
 }
