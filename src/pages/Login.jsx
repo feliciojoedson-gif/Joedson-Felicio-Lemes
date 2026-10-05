@@ -27,7 +27,7 @@ export default function Login() {
         </div>
         <div className="corpo">
           <label htmlFor="login-email" className="lb">Email</label>
-          <input id="login-email" className="input" type="email" placeholder="nome@empresa.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+          <input id="login-email" className="input" type="email" placeholder="seu.nome@empresa.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
           <label htmlFor="login-senha" className="lb">Senha</label>
           <input id="login-senha" className="input" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required autoComplete="current-password" />
           <button className="btn block" type="submit" disabled={ocupado}>Entrar</button>
