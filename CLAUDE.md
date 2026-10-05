@@ -41,7 +41,7 @@ Diff que toca em `src/lib/supabase.js`, `src/lib/dados.js`, `src/App.jsx` (sess�
 ## Deploy
 
 No ar em **https://joedson-felicio-lemes.vercel.app** (Vercel, plano Hobby). Repositório: `feliciojoedson-gif/Joedson-Felicio-Lemes`, branch `main`; o nome é o que o projeto já tinha e foi mantido de propósito. Padrão: a pessoa diz "sobe pro GitHub", o agente sobe com git, e a Vercel publica sozinha. A pessoa não digita comando.
-Variáveis no painel da Vercel: `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (**não** é `ANON_KEY`; o roteiro genérico da skill usa outro nome). Não há conector nem CLI da Vercel nesta máquina: mudança no painel é clique da pessoa.
+Variáveis no painel da Vercel: `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (**não** é `ANON_KEY`; o roteiro genérico da skill usa outro nome). O conector da Vercel existe, mas deu 403 (precisa ser reconectado no Claude); sem ele, mudança e leitura no painel são clique da pessoa.
 **Cadastro público FECHADO** (Supabase > Authentication > Sign In / Providers: `disable_signup: true` e `mailer_autoconfirm: true`, conferidos em 05/10/2026 por `/auth/v1/settings`). Ninguém cria conta sozinho: quem cadastra é o Coordenador pelo **Painel de admin** (ícone com a inicial do nome, no topo > Painel de admin > Usuários). A tela de entrada só tem Entrar; "esqueci minha senha" manda pedir uma senha nova ao administrador. **A proteção Captcha do Auth tem que ficar DESLIGADA** (Authentication > Attack Protection): o app não tem captcha e, ligada, todo login falha com "Não consegui concluir".
 
 ## Estado atual (fim da sessão de 04/10/2026)
@@ -63,7 +63,7 @@ Variáveis no painel da Vercel: `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE
 - **Materiais e Diário de Obra (RDO) com banco** (05/10/2026): `materiais_catalogo` (global, só o Coordenador altera), `pedidos_material` e `rdo_registros` (com `obra_id` e RLS por obra; migration `20261005010000_materiais_rdo.sql`, teste `supabase/tests/materiais_rdo.sql`, exemplo em `supabase/seed_materiais_rdo.sql`). Fotos do RDO e a nota fiscal do recebimento sobem pelo `uploadFoto` de `dados.js` (comprime e grava em `<obra_id>/rdo/` ou `<obra_id>/materiais/` no bucket privado `fotos`); a tabela guarda o caminho e a leitura devolve link assinado. Foto que falha não perde o registro (a tela avisa). Escreve RDO: Coordenador e Produção; pedidos: Coordenador, Planejamento e Produção; apagar pedido/RDO só o Coordenador.
 
 **Pendências de ambiente/segurança (não mexidas):**
-- Pasta do projeto está dentro do OneDrive com `node_modules` e `.git`: risco de corromper o `.git`. Mover para fora (ex.: `C:\dev`).
+- Pasta do projeto fica em `C:\dev\KaeferRip` (fora do OneDrive, de propósito, por causa do `.git` e do `node_modules`). Não mover de volta.
 - Avisos do Supabase (conferidos em 05/10/2026): as 4 views `SECURITY DEFINER` são de propósito (recortam colunas e filtram por perfil/obra dentro da própria view); `rodar_virada` só roda para Coordenador e `virada_estado` esconde o resultado de Cliente/Pendente. A proteção contra senha vazada (Authentication > Sign In / Providers > Email) só existe em plano pago e fica **desligada de propósito** no plano Grátis: o advisor sempre vai listar esse aviso. Mitigação possível: subir o tamanho mínimo da senha no mesmo painel. Ao migrar para plano pago, ligar.
 - Arquivos soltos na raiz que não são do app: imagem do WhatsApp, `oficina-ok.txt`, `preview.html`.
 - 2FA da conta da Vercel não configurado. Plano grátis da Vercel tem restrição de uso comercial: conferir os termos antes de a equipe usar.
