@@ -66,7 +66,7 @@ Variáveis no painel da Vercel: `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE
 - Pasta do projeto fica em `C:\dev\KaeferRip` (fora do OneDrive, de propósito, por causa do `.git` e do `node_modules`). Não mover de volta.
 - Avisos do Supabase (conferidos em 05/10/2026): as 4 views `SECURITY DEFINER` são de propósito (recortam colunas e filtram por perfil/obra dentro da própria view); `rodar_virada` só roda para Coordenador e `virada_estado` esconde o resultado de Cliente/Pendente. A proteção contra senha vazada (Authentication > Sign In / Providers > Email) só existe em plano pago e fica **desligada de propósito** no plano Grátis: o advisor sempre vai listar esse aviso. Mitigação possível: subir o tamanho mínimo da senha no mesmo painel. Ao migrar para plano pago, ligar.
 - Arquivos soltos na raiz que não são do app: imagem do WhatsApp, `oficina-ok.txt`, `preview.html`.
-- 2FA da conta da Vercel não configurado. Plano grátis da Vercel tem restrição de uso comercial: conferir os termos antes de a equipe usar.
+- 2FA da conta da Vercel ligado (app autenticador, 05/10/2026); códigos de recuperação guardados pela pessoa. Plano grátis da Vercel tem restrição de uso comercial: conferir os termos antes de a equipe usar.
 
 **Próximo passo:** Fase 5 do plano de migração: conferir RLS de todas as tabelas, testes de permissão pelo navegador com contas reais de cada perfil, advisors do Supabase, e remover `tests/fixtures/mockData.js` quando os testes deixarem de depender dele.
 
