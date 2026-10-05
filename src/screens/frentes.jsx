@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CabecalhoDaLista, FrenteItem, Icone, Seletor, Topo, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
+import { FormFrente } from './cadastros.jsx'
 import { DISCIPLINAS, ordenarFrentes, pode, STATUS_FRENTE } from '../lib/regras.js'
 
 export default function Frentes({ goto, avisar }) {
@@ -9,7 +10,8 @@ export default function Frentes({ goto, avisar }) {
   const [resp, setResp] = useState('')
   const [status, setStatus] = useState('')
 
-  const nova = () => avisar('O formulário de nova frente chega na próxima etapa.')
+  const [formAberto, setFormAberto] = useState(false)
+  const nova = () => setFormAberto(true)
   const lista = ordenarFrentes(
     frentes.filter((f) => (!disc || f.disciplina === disc) && (!resp || String(f.responsavel_id) === resp) && (!status || f.status === status)),
     hoje,
@@ -41,6 +43,7 @@ export default function Frentes({ goto, avisar }) {
               </>
             )}
       </div>
+      {formAberto && <FormFrente onFechar={() => setFormAberto(false)} avisar={avisar} />}
     </>
   )
 }

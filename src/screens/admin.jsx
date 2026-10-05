@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { Aba, Chip, Icone, Topo, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
-import { formatarData, veTodasAsObras } from '../lib/regras.js'
+import { formatarData, pode, veTodasAsObras } from '../lib/regras.js'
+import { FormAcesso, FormObra } from './cadastros.jsx'
 
 const tomDaObra = { Planejamento: 'neutral', Ativa: 'ok', Suspensa: 'warn', Encerrada: 'neutral', Arquivada: 'neutral' }
 
 // Administração é cadastro (obras e pessoas), não lançamento: é a única tela que
 // lista todas as obras de uma vez, de propósito.
 export default function Admin({ avisar }) {
-  const { obras, perfis, membros, nomeDe } = useDados()
+  const { usuario, obras, perfis, membros, nomeDe } = useDados()
   const [aba, setAba] = useState('obras')
-  const etapa = (t) => avisar(`${t} chega na próxima etapa.`)
+  const [formObra, setFormObra] = useState(null) // null | {} (nova) | obra
+  const [acesso, setAcesso] = useState(null) // pessoa
+  const podeAdministrar = pode(usuario.role, 'administrar')
 
   const pendentes = perfis.filter((p) => p.role === 'Pendente')
   const ativos = perfis.filter((p) => p.role !== 'Pendente')
@@ -19,7 +22,7 @@ export default function Admin({ avisar }) {
   return (
     <>
       <Topo titulo="Administração">
-        {aba === 'obras' && <button className="btn" onClick={() => etapa('O formulário de nova obra')}><Icone nome="plus" />Nova obra</button>}
+        {aba === 'obras' && podeAdministrar && <button className="btn" onClick={() => setFormObra({})}><Icone nome="plus" />Nova obra</button>}
       </Topo>
       <Aba valor={aba} onTroca={setAba} opcoes={[['obras', 'Obras'], ['usuarios', 'Usuários']]} />
 
@@ -33,7 +36,10 @@ export default function Admin({ avisar }) {
               <div className="s">{o.endereco}</div>
               <div className="s">Início {formatarData(o.data_inicio)} · meta de entrega {formatarData(o.data_fim_contratual)} · responsável {nomeDe(o.responsavel_id) || '—'}</div>
             </div>
-            <Chip tom={tomDaObra[o.status]}>{o.status}</Chip>
+            <div>
+              <Chip tom={tomDaObra[o.status]}>{o.status}</Chip>
+              {podeAdministrar && <button type="button" className="btn secondary" style={{ marginTop: 6 }} onClick={() => setFormObra(o)}>Editar</button>}
+            </div>
           </div>
         )))}
 
@@ -45,18 +51,23 @@ export default function Admin({ avisar }) {
             : pendentes.map((p) => (
               <div className="row-card" key={p.id}>
                 <div><div className="t">{p.nome} <span className="pending">Aguardando liberação</span></div><div className="s">{p.email}</div></div>
-                <button className="btn secondary" onClick={() => etapa('A escolha de perfil e obras')}>Liberar</button>
+                {podeAdministrar && <button className="btn secondary" onClick={() => setAcesso(p)}>Liberar</button>}
               </div>
             ))}
           <div className="section-title">Usuários</div>
           {ativos.map((p) => (
             <div className="row-card" key={p.id}>
               <div><div className="t">{p.nome}</div><div className="s">{p.role} · {qtdObras(p)}</div></div>
-              <Chip tom={p.ativo ? 'ok' : 'neutral'}>{p.ativo ? 'Ativo' : 'Inativo'}</Chip>
+              <div>
+                <Chip tom={p.ativo ? 'ok' : 'neutral'}>{p.ativo ? 'Ativo' : 'Bloqueado'}</Chip>
+                {podeAdministrar && p.id !== usuario.id && <button type="button" className="btn secondary" style={{ marginTop: 6 }} onClick={() => setAcesso(p)}>Acesso</button>}
+              </div>
             </div>
           ))}
         </>
       )}
+      {formObra && <FormObra obra={formObra.id ? formObra : null} onFechar={() => setFormObra(null)} avisar={avisar} />}
+      {acesso && <FormAcesso pessoa={acesso} onFechar={() => setAcesso(null)} avisar={avisar} />}
     </>
   )
 }

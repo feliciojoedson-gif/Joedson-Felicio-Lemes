@@ -2,7 +2,7 @@
 import {
   classeDoDesperdicio, DESPERDICIOS, errosGemba, filtrarGemba, novaObservacaoGemba, ordenarGemba, rankingDesperdicios, vencida,
 } from '../src/lib/qualidade.js'
-import { gembaDeExemplo } from '../src/lib/mockData.js'
+import { gembaDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

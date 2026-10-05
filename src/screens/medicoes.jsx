@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Aba, Seletor, Topo, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
 import Empreiteiros from './empreiteiros.jsx'
+import { FormMedicao } from './cadastros.jsx'
+import { mudarStatusMedicaoDaFrente } from '../lib/dados.js'
+import { passoDaMedicao } from '../lib/cadastros.js'
 import {
   concluidaSemMedicao, DISCIPLINAS, formatarData, formatarDinheiro, formatarMes, pode,
 } from '../lib/regras.js'
@@ -9,7 +12,14 @@ import {
 const tomDoStatus = { Rascunho: 'pending', Enviada: 'pending', 'Aprovada pela Gestão': 'pending', Aprovada: 'done' }
 
 export default function Medicoes({ avisar }) {
-  const { usuario, frentes, medicoes } = useDados()
+  const { usuario, obra, frentes, medicoes, recarregar } = useDados()
+  const [medindo, setMedindo] = useState(null)
+  const avancar = async (m, para) => {
+    const { erro } = await mudarStatusMedicaoDaFrente(obra, m.id, para)
+    if (erro) return avisar(erro.regra ? erro.message : 'Não consegui mudar o status da medição. Tente de novo.')
+    recarregar()
+    avisar('Medição atualizada.')
+  }
   const [aba, setAba] = useState('medir')
   const [disc, setDisc] = useState('')
   const [mes, setMes] = useState('')
@@ -42,7 +52,7 @@ export default function Medicoes({ avisar }) {
         : aMedir.map((f) => (
           <div className="row-card" key={f.id}>
             <div><div className="t">{f.nome}</div><div className="s">{f.disciplina} · concluída em {formatarData(f.ultimo_avanco_em)}</div></div>
-            {podeMedir && <button className="btn accent" onClick={() => avisar('O formulário de medição chega na próxima etapa.')}>Medir</button>}
+            {podeMedir && <button className="btn accent" onClick={() => setMedindo(f)}>Medir</button>}
           </div>
         )))}
 
@@ -55,8 +65,12 @@ export default function Medicoes({ avisar }) {
               <div className="s">{m.percentual_medido}% medido · <span className={tomDoStatus[m.status]}>{m.status}</span></div>
             </div>
             <div className="money">{formatarDinheiro(m.valor_medido)}</div>
+            {passoDaMedicao(m.status, usuario.role) && (
+              <button type="button" className="btn accent" onClick={() => avancar(m, passoDaMedicao(m.status, usuario.role).para)}>{passoDaMedicao(m.status, usuario.role).rotulo}</button>
+            )}
           </div>
         )))}
+      {medindo && <FormMedicao frente={medindo} onFechar={() => setMedindo(null)} avisar={avisar} />}
     </>
   )
 }

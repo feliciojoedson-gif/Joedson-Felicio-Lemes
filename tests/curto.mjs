@@ -4,7 +4,7 @@ import {
   historicoPPC, moverAtividade, naoRealizarSubtarefa, novaSubtarefa, percentualDasSubtarefas, ppcDaSemana, recalcularAtividade,
   removerSubtarefa, semanaAtual, semanaPorInicio, subtarefasPendentes,
 } from '../src/lib/planejamento.js'
-import { planejamentoDeExemplo } from '../src/lib/mockData.js'
+import { planejamentoDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

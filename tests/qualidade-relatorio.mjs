@@ -1,6 +1,6 @@
 // Dados do relatório de qualidade (src/lib/qualidade.js). Node puro: `node tests/qualidade-relatorio.mjs`.
 import { descreverFiltros, montarRelatorio } from '../src/lib/qualidade.js'
-import { gembaDeExemplo, ncsDeExemplo, pendenciasDeExemplo, vistoriasDeExemplo } from '../src/lib/mockData.js'
+import { gembaDeExemplo, ncsDeExemplo, pendenciasDeExemplo, vistoriasDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

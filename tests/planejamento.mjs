@@ -4,7 +4,7 @@ import {
   ehDiaUtil, errosAtividade, errosCalendario, errosFeriado, opcoesDePai, opcoesDePosicao, progressoDaAtividade, somarDias,
   statusDaAtividade,
 } from '../src/lib/planejamento.js'
-import { planejamentoDeExemplo } from '../src/lib/mockData.js'
+import { planejamentoDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

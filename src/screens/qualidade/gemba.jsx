@@ -111,6 +111,7 @@ function FormNova({ onSalvar, onFechar }) {
 
 function Detalhe({ id, podeGerir, avisar, onFechar }) {
   const q = useQualidade()
+  const { usuario } = useDados()
   const o = q.gemba.find((x) => x.id === id)
   const { pedir, caixa } = useConfirmar()
   if (!o) return null
@@ -144,7 +145,7 @@ function Detalhe({ id, podeGerir, avisar, onFechar }) {
                 <div className="chips" role="group" aria-label="Mover para">
                   {COLUNAS_GEMBA.filter(([k]) => k !== o.status).map(([k, t]) => <button key={k} type="button" onClick={() => mover(k)}>Mover para {t}</button>)}
                 </div>
-                <button type="button" className="btn secondary block q-excluir" onClick={excluir}>Excluir observação</button>
+                {pode(usuario.role, 'apagarQualidade') && <button type="button" className="btn secondary block q-excluir" onClick={excluir}>Excluir observação</button>}
               </>
             )}
             <button type="button" className="btn secondary block" onClick={onFechar}>Fechar</button>

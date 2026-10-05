@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
 import { Chip, Icone, Vazio } from '../../components/index.jsx'
+import { useDados } from '../../lib/DadosContext.jsx'
 import { usePlanejamento } from '../../lib/PlanejamentoContext.jsx'
 import { linhasDaPlanilha } from '../../lib/importacao.js'
 import { gerarModelo, lerPlanilha } from '../../lib/planilha.js'
-import { formatarDataCurta } from '../../lib/regras.js'
+import { formatarDataCurta, pode } from '../../lib/regras.js'
 import {
   arvore, diasUteis, errosAtividade, opcoesDePai, opcoesDePosicao, progressoDaAtividade, restricoesAbertasPorAtividade, ROTULO_STATUS,
   periodoRealDaAtividade, statusDaAtividade, textoDiasUteis, TOM_STATUS,
@@ -136,6 +137,8 @@ function LinhaEap({ a, atividades, calendario, restricoes, onEditar, onSub, onAr
 
 export default function Eap({ avisar }) {
   const { atividades, restricoes, calendario, salvarAtividade, arquivarAtividade } = usePlanejamento()
+  const { usuario } = useDados()
+  const podeImportar = pode(usuario.role, 'importarPlanejamento')
   const abertasPorAtividade = restricoesAbertasPorAtividade(restricoes)
   const [form, setForm] = useState(null) // { atividade? , paiInicial? }
   const [verArquivadas, setVerArquivadas] = useState(false)
@@ -201,8 +204,8 @@ export default function Eap({ avisar }) {
   const botoesPlanilha = (
     <>
       <button type="button" className="btn secondary" onClick={baixarModelo}>BAIXAR PLANILHA MODELO</button>
-      <button type="button" className="btn secondary" disabled={lendo} onClick={() => seletor.current.click()}>{lendo ? 'LENDO…' : 'IMPORTAR PLANILHA'}</button>
-      <input ref={seletor} type="file" accept=".xlsx,.csv" className="sr-only" tabIndex={-1} aria-label="Escolher planilha .xlsx ou .csv" onChange={escolherArquivo} />
+      {podeImportar && <button type="button" className="btn secondary" disabled={lendo} onClick={() => seletor.current.click()}>{lendo ? 'LENDO…' : 'IMPORTAR PLANILHA'}</button>}
+      {podeImportar && <input ref={seletor} type="file" accept=".xlsx,.csv" className="sr-only" tabIndex={-1} aria-label="Escolher planilha .xlsx ou .csv" onChange={escolherArquivo} />}
     </>
   )
 

@@ -4,7 +4,7 @@ import {
   ampliarPeriodo, errosAtividade, moverAtividade, periodoRealDaAtividade, resumoBaseline, textoDesvio,
 } from '../src/lib/planejamento.js'
 import { analisarLinhas, linhasDaPlanilha, montarAtividades } from '../src/lib/importacao.js'
-import { planejamentoDeExemplo } from '../src/lib/mockData.js'
+import { planejamentoDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

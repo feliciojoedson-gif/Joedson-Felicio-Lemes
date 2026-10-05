@@ -7,7 +7,7 @@ import {
   CLIMAS, errosRdo, ordenarRdo, dataExtensa,
   PERFIS, MENUS, STATUS_OBRA, STATUS_MEDICAO, veTodasAsObras, veTodoODiario, hojeEmBrasilia, viradaAtrasada,
 } from '../src/lib/regras.js'
-import * as mock from '../src/lib/mock.js'
+import * as mock from './fixtures/mock.js'
 
 let ok = 0
 let tot = 0

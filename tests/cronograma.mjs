@@ -3,7 +3,7 @@ import {
   calendarioPadrao, colunasDoCronograma, periodoDoCronograma, posicaoDoDia, posicaoNaLinha, previstoDaAtividade, previstoDaFolha,
   escalaPadrao, progressoDaAtividade, resumoDoCronograma, rotuloDoPrazo, segundaDaSemana, tomDoDesvio,
 } from '../src/lib/planejamento.js'
-import { planejamentoDeExemplo } from '../src/lib/mockData.js'
+import { planejamentoDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

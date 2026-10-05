@@ -108,7 +108,7 @@ export default function Modelos({ avisar }) {
                 {podeGerir && (
                   <div className="q-foto-botoes">
                     <button type="button" className="btn secondary" onClick={() => setForm({ modelo: m })}>Editar</button>
-                    <button type="button" className="btn secondary q-excluir-inline" onClick={() => excluir(m)}>Excluir</button>
+                    {pode(usuario.role, 'apagarQualidade') && <button type="button" className="btn secondary q-excluir-inline" onClick={() => excluir(m)}>Excluir</button>}
                   </div>
                 )}
               </div>

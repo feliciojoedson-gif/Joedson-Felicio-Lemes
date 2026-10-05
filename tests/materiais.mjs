@@ -3,7 +3,7 @@ import {
   aplicarMovimento, chegaNaSemana, contadoresMateriais, diasNaColuna, errosCompra, errosEntrega, errosPedido,
   errosRecebimento, estaAtrasado, leadTimeDias, limparNumero, novoPedido, pillDoPedido, temAlertaDeRecebimento, textoDeDias,
 } from '../src/lib/regras.js'
-import { materiaisCatalogo, pedidos } from '../src/lib/mockData.js'
+import { materiaisCatalogo, pedidos } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

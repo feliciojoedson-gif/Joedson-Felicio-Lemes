@@ -20,7 +20,7 @@ Uma pergunta decide: **"isto continuaria verdade se a tela fosse outra?"**
 
 - **Sim → `src/lib/*.js`.** Regra pura (semáforo, planejado, permissões, ordenação). Sem React, sem banco, sem `window`. Roda no Node sem bundler (import com `.js` explícito). É a única camada com teste.
 - **Não → `src/screens/*.jsx`.** Layout e estado de interface. A tela **pede a decisão à lib**; não decide.
-- `src/lib/dados.js` — **única porta dos dados** (Supabase, via `src/lib/supabase.js`). Nenhuma tela chama o Supabase direto. `src/lib/mock.js` virou massa de teste de `tests/regras.mjs`: nenhuma tela o importa.
+- `src/lib/dados.js` — **única porta dos dados** (Supabase, via `src/lib/supabase.js`). Nenhuma tela chama o Supabase direto. `tests/fixtures/mock.js` virou massa de teste de `tests/regras.mjs`: nenhuma tela o importa.
 - `if` de negócio dentro de tela vai para `lib`, mesmo com três linhas. Constante compartilhada (status, perfis, disciplinas, motivos) tem um dono só: `regras.js`.
 - O vocabulário de `regras.js` tem que ser **idêntico** ao CHECK do banco (com acento).
 
@@ -59,22 +59,21 @@ Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `P
 - Fotos do seed não têm arquivo: aparecem como ícone.
 - "Mostrar ao cliente" (Detalhe da frente) e a foto mais recente do cartão da obra (Painel) ainda são só aviso/ícone.
 - Coordenador não tem lista dos lançamentos do dia no Diário (o histórico fica no Detalhe da frente). O PRD é ambíguo; decidir.
-- Os outros formulários ainda não gravam: frentes, medições, restrições, administração.
-- Materiais (Kanban de pedidos): em memória (`dados.js` + `mockData.js`), como o Diário de Obra; volta ao exemplo ao recarregar. Banco: tabela com `obra_id` e RLS por obra (marcado com `ponytail:`).
+- Frentes, restrições, medições das frentes, liberação de foto ao cliente, obras e acesso de pessoas **gravam no banco** (05/10/2026): formulários em `src/screens/cadastros.jsx`, regras puras em `src/lib/cadastros.js` (teste `tests/cadastros.mjs`), gravação em `dados.js` (bloco CADASTROS), teste de RLS em `supabase/tests/cadastros.sql`. A medição mensal não anexa evidência ainda (bucket `evidencias` existe, sem tela). Aprovação da medição: Medição/Coordenador enviam, Gestão Contratual aprova, Coordenador finaliza (gatilho do banco confere a ordem).
+- **Materiais e Diário de Obra (RDO) com banco** (05/10/2026): `materiais_catalogo` (global, só o Coordenador altera), `pedidos_material` e `rdo_registros` (com `obra_id` e RLS por obra; migration `20261005010000_materiais_rdo.sql`, teste `supabase/tests/materiais_rdo.sql`, exemplo em `supabase/seed_materiais_rdo.sql`). Fotos do RDO e a nota fiscal do recebimento sobem pelo `uploadFoto` de `dados.js` (comprime e grava em `<obra_id>/rdo/` ou `<obra_id>/materiais/` no bucket privado `fotos`); a tabela guarda o caminho e a leitura devolve link assinado. Foto que falha não perde o registro (a tela avisa). Escreve RDO: Coordenador e Produção; pedidos: Coordenador, Planejamento e Produção; apagar pedido/RDO só o Coordenador.
 
 **Pendências de ambiente/segurança (não mexidas):**
 - Pasta do projeto está dentro do OneDrive com `node_modules` e `.git`: risco de corromper o `.git`. Mover para fora (ex.: `C:\dev`).
-- Banco tem a migration `restricao_resolvida_search_path` sem arquivo em `supabase/migrations/` (viola "migration é arquivo").
-- Avisos do Supabase: 4 views `SECURITY DEFINER` (`frentes_cliente`, `medicoes_cliente`, `apontamentos_sem_efetivo`, `perfis_colegas`; provavelmente de propósito, confirmar), `rodar_virada` e `virada_estado` chamáveis por qualquer logado (confirmar que `rodar_virada` checa o perfil por dentro), proteção contra senha vazada desligada.
+- Avisos do Supabase (conferidos em 05/10/2026): as 4 views `SECURITY DEFINER` são de propósito (recortam colunas e filtram por perfil/obra dentro da própria view); `rodar_virada` só roda para Coordenador e `virada_estado` esconde o resultado de Cliente/Pendente. A proteção contra senha vazada (Authentication > Sign In / Providers > Email) só existe em plano pago e fica **desligada de propósito** no plano Grátis: o advisor sempre vai listar esse aviso. Mitigação possível: subir o tamanho mínimo da senha no mesmo painel. Ao migrar para plano pago, ligar.
 - Arquivos soltos na raiz que não são do app: imagem do WhatsApp, `oficina-ok.txt`, `preview.html`.
 - 2FA da conta da Vercel não configurado. Plano grátis da Vercel tem restrição de uso comercial: conferir os termos antes de a equipe usar.
 
-**Próximo passo:** fazer o formulário de **Frentes** gravar de verdade (criar, editar, apagar, pelo `dados.js`, com teste da regra em `lib/` e RLS já existente), porque o Painel só mostra o que existe e hoje as frentes vêm do seed. Faça a mudança, rode `npm run check` e suba pro GitHub (a Vercel publica sozinha). Se preferir outro módulo, a ordem sugerida do plano é Frentes → Restrições → Medições → Administração.
+**Próximo passo:** Fase 5 do plano de migração: conferir RLS de todas as tabelas, testes de permissão pelo navegador com contas reais de cada perfil, advisors do Supabase, e remover `tests/fixtures/mockData.js` quando os testes deixarem de depender dele.
 
 ## Módulo Planejamento (Last Planner)
 
 Quatro abas (EAP, Longo, Médio, Curto) em `src/screens/planejamento/`, **todas sobre UMA lista de atividades** (`PlanejamentoContext.jsx`, remontado a cada troca de obra). Regras puras em `src/lib/planejamento.js` (EAP, dias úteis, previsto x real, lookahead, PPC) e `src/lib/importacao.js` (planilha); testes em `tests/{planejamento,cronograma,lookahead,curto,importacao}.mjs`.
-- **Ainda sem banco:** dados em memória em `dados.js` (`ponytail:`), exemplo em `mockData.js` (`planejamentoDeExemplo`, por código de obra). Obra sem exemplo começa vazia.
+- **Com banco** (Supabase): `atividades_planejamento`, `restricoes_planejamento` e `planejamento_config` (calendário + linha de base, uma linha por obra), todas com `obra_id` e RLS por obra; chave `(obra_id, id)` com id numerado por obra. Migration `20261005000000_planejamento.sql`, teste `supabase/tests/planejamento.sql`, exemplo em `supabase/seed_planejamento.sql`. Lê e grava: Coordenador, Planejamento, Produção; apagar só Coordenador e Planejamento. `dados.js` calcula a lista nova pelas regras de `lib/planejamento.js` e grava só a diferença (`gravarPlanejamento`). `planejamentoDeExemplo` segue em `tests/fixtures/mockData.js` só como massa dos testes.
 - **Única exceção à regra "sem outras bibliotecas": `xlsx` (SheetJS)**, instalada do tarball oficial (`cdn.sheetjs.com`, não do npm, que está desatualizado) e carregada por `import()` só ao importar planilha (`src/lib/planilha.js`). Nada sai do navegador.
 - Semana de planejamento: segunda a domingo; sábado e domingo já olham para a semana seguinte (`segundaDeReferencia`).
 - Confirmação dentro da tela (`useConfirmar` em `planejamento/ui.jsx`), não `window.confirm`: ele some em navegador embutido e o clique "não faz nada".
@@ -86,26 +85,34 @@ Mora na tela **Medições**, aba "Empreiteiros" (`src/screens/empreiteiros.jsx` 
 - **Com banco** (Supabase): `contratos_empreiteiro`, `itens_contrato`, `boletins_empreiteiro` (todas com `obra_id` e RLS por obra). Migrations `20261004200000_empreiteiros.sql`, `..200100_empreiteiros_ativacao.sql` e `..200200_empreiteiros_integridade.sql` (o escopo só muda com o contrato em Elaboração/Enviado; ativo por escopo sempre soma os itens); teste de RLS e regras em `supabase/tests/empreiteiros.sql`; exemplo no `seed.sql`.
 - As regras de dinheiro valem **no banco também** (gatilhos): concluir só com 100% medido, nenhum item passa de 100%, o banco numera o boletim, ordem das colunas. Boletim é imutável (sem UPDATE/DELETE). Ativar o contrato é a função `ativar_contrato_empreiteiro` (itens + valor + status numa transação). O banco escreve a recusa em português (P0001) e a tela mostra o texto (`erro.regra`).
 - Perfis que criam/movem/medem: Coordenador, Planejamento, Medição (`gerirEmpreiteiros` e a RLS); os demais só consultam. Mudou permissão: mude a policy, `regras.js` e o teste SQL no mesmo lote.
-- `mockData.js` (`contratos`, `itensContrato`, `medicoes`) virou massa de teste de `tests/empreiteiros.mjs`: nenhuma tela o importa.
+- `tests/fixtures/mockData.js` (`contratos`, `itensContrato`, `medicoes`) virou massa de teste de `tests/empreiteiros.mjs`: nenhuma tela o importa.
 
 ## Módulo Qualidade (Pendências, FVS, Gemba Walk, Relatório)
 
 Tela `qualidade` em `src/screens/qualidade.jsx` (menu: Coordenador, Planejamento, Engenharia, Produção, Diretoria só leitura; criar/editar = `gerirQualidade`). Três abas em `src/screens/qualidade/` (`pendencias.jsx`, `fvs*.jsx` com Vistorias/NCs/Modelos, `gemba.jsx`) e o botão "Relatório" (`relatorio.jsx`, portal no `<body>` + `window.print()`).
 - **UM estado** em `src/lib/QualidadeContext.jsx` (remontado a cada troca de obra), gravação otimista com rollback. Os filtros de cada aba moram nele para o relatório respeitá-los. Regras puras em `src/lib/qualidade.js`; testes em `tests/qualidade*.mjs`.
-- **Ainda sem banco:** dados em memória em `dados.js` (`ponytail:`), exemplo em `mockData.js` (`obraCodigo`: U12 completa, T405 enxuta). Modelos de FVS valem para a empresa toda; vistorias, NCs, pendências e observações de Gemba são por obra. Registros novos nascem com id uuid e código/número calculados no contexto (`NC-001`, `#1` por obra); com o banco, a numeração passa para ele.
+- **Com banco** (05/10/2026): `qualidade_pendencias`, `fvs_vistorias`, `fvs_ncs`, `gemba_observacoes` (com `obra_id` e RLS por obra) e `fvs_modelos` (da empresa toda). Migration `20261005020000_qualidade.sql`, teste `supabase/tests/qualidade.sql`, exemplo em `supabase/seed_qualidade.sql`. O banco numera a pendência por obra; o código da NC (`NC-001`) ainda é calculado na tela (único por obra: colisão devolve erro). Marcar NC grava NC + resposta da vistoria pela função `fvs_registrar_nc` (SECURITY INVOKER). Ler: quem usa Qualidade/Relatórios; criar/editar: `gerirQualidade`; apagar pendência só Coordenador; modelo e Gemba também Planejamento e Engenharia (`apagarQualidade`); vistoria e NC não se apagam. Tabelas com id uuid ficam fora da `private.auditar()` (ela converte o id para bigint).
 - A vistoria guarda uma **cópia** dos grupos do modelo; editar o modelo sobe a versão e não mexe em vistoria feita. Item marcado NC só nasce pelo painel de NC e depois não volta a OK.
-- Impressão: `.no-print` esconde menu/botões; com o relatório aberto `body.q-imprimindo #root` some no `@media print`. Fotos são só preview local (`URL.createObjectURL`), sem upload.
+- Impressão: `.no-print` esconde menu/botões; com o relatório aberto `body.q-imprimindo #root` some no `@media print`.
+- **Fotos** (pendência, evidência da correção, NC, Gemba): a tela entrega a prévia local (blob:), `dados.js` comprime e sobe para `<obra_id>/qualidade/` no bucket `fotos`, e a tabela guarda o caminho; na leitura volta o link assinado (`linkParaCaminho` traduz de volta ao regravar). Falhou o envio: o registro é salvo sem a foto e a tela avisa; só "Resolver" exige a foto e recusa se ela não subir.
 
 ## Armadilhas desta base
 
 - **Banco:** projeto Supabase `kaefer-rip` (`rbqzyxyneuqbeyvjdzom`, São Paulo). Chaves em `.env.local` (fora do git; modelo em `.env.example`). Migrations em `supabase/migrations/` e testes de RLS em `supabase/tests/*.sql` (cada um termina em erro `RELATORIO` de propósito, para não gravar nada).
-- **Login é real** (email e senha). Conta nova nasce `Pendente`; o primeiro Coordenador é promovido à mão no banco, depois do cadastro. O **Diário grava de verdade** (lançamento e fotos, com os gatilhos do banco). Os demais formulários (frentes, medições, restrições, administração) **ainda não gravam** e mostram um aviso: não confunda isso com bug.
+- **Login é real** (email e senha). Conta nova nasce `Pendente`; o primeiro Coordenador é promovido à mão no banco, depois do cadastro. O **Diário grava de verdade** (lançamento e fotos, com os gatilhos do banco). Todos os formulários gravam de verdade.
 - Quem decide o que cada perfil lê é a **RLS**, não o `dados.js`. Mudou permissão: mude a policy, `regras.js` (menu e botões) e `supabase/tests/rls.sql` no mesmo lote.
 - A virada diária roda no banco (`pg_cron`, 09h UTC = 06h de Brasília). Sem registro `ok` na `auditoria` depois das 7h, o Painel avisa.
 - Data "hoje" = `hojeEmBrasilia()` (`regras.js`).
 - "A medir" = frente `Concluída` sem medição `Enviada`/`Aprovada` (um `Rascunho` não conta como medida).
 - Semáforo da obra usa os mesmos limites da frente aplicados ao desvio da obra (-5 e -10); o plano não definia isso.
 - O Cliente recebe frentes **sem** responsável, dias sem avanço, impacto nem data de decisão: o recorte está em `dados.js` (no banco, será a RLS/view).
+
+## Revisão de código de 05/10/2026 — o que ficou de fora de propósito
+
+- Foto some do registro se o link assinado falhar numa leitura e a pessoa editar o registro logo depois (Gemba/NC regravam o caminho vazio). Raro; tratar se aparecer.
+- `definirObrasDoPerfil`/`liberarConta` e o histórico do pedido (`moverPedido`) não são transacionais: duas pessoas mexendo juntas podem perder uma entrada.
+- Planejamento e Engenharia apagam Gemba e modelos de FVS, e Planejamento apaga atividades (decisão de perfil; a RLS é a fonte).
+- Listas de perfis repetidas nas policies SQL: ao mudar permissão, mude policy, `regras.js` e o teste no mesmo lote.
 
 ## Higiene de código (vale para toda mudança)
 
@@ -124,7 +131,7 @@ Tela `relatorios` (`src/screens/relatorios.jsx` + `relatorios/{executivo,ritmo,f
 - **Motor adaptativo em `src/lib/biData.js`** (regras puras, `tests/biData.mjs`). **Regra de ouro:** funciona com qualquer combinação de módulos; módulo ausente ou vazio devolve `null` e o card mostra "Painel bloqueado" (`Bloqueado`); se o módulo tem dado e o **filtro** esvaziou, mostra "sem registro" (`modulos` de `modulosDisponiveis`). Nenhuma função devolve NaN.
 - **Leitura pela camada de dados:** `carregarRelatorio(obra)` em `dados.js` lê cada módulo à parte (um falhar não derruba os outros; o nome vai em `falhas`). Módulo novo que alimente o BI: acrescente a leitura ali e a função em `biData.js`; a tela nunca chama o banco.
 - **Filtros cruzados:** empresa e período valem para todos os painéis (`aplicarFiltros`). Empresa filtra atividades, contratos, pendências, vistorias, NCs e Gemba (registros com campo `empresa`); Diário e Materiais são da obra toda. Período só corta o que tem data; saldo e % medido dos contratos ignoram o período (usam `boletinsTodos`).
-- **Mock:** `planejamentoCompleto` (em `mockData.js`) completa o Planejamento da U12 (9 semanas de histórico, causas variadas, `empresa` por tarefa) e só o `dados.js` o usa; `planejamentoDeExemplo` NÃO muda porque os testes do Planejamento dependem dele. Diários extras e `empresa` nas NCs, vistorias e Gemba estão em `mockData.js`.
+- **Mock:** `planejamentoCompleto` (em `tests/fixtures/mockData.js`) é massa de teste do BI (só `tests/biData.mjs` o usa); o app lê o Planejamento do banco; `planejamentoDeExemplo` NÃO muda porque os testes do Planejamento dependem dele. Diários extras e `empresa` nas NCs, vistorias e Gemba estão em `tests/fixtures/mockData.js`.
 - **Estoque é opcional:** arrays `insumos` e `movimentos` em `fontes` ligam o alerta de saldo mínimo e entradas x saídas; sem eles nada aparece (nem card bloqueado). Hoje nenhum módulo os fornece.
 - **Impressão:** botão "Imprimir relatório executivo" (`window.print`), cabeçalho e rodapé só no papel (`.bi-print-cab`, `.bi-print-rodape`), `.no-print` esconde menu e filtros, painéis com `break-inside: avoid`.
 - PPC geral = soma das tarefas feitas / soma das planejadas em todas as semanas. Pareto = só o que está "não realizado" hoje (o app apaga a causa ao concluir).

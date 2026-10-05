@@ -14,6 +14,7 @@ function Formulario({ hoje, onSalvar, onFechar }) {
   const [tocados, setTocados] = useState({})
   const [tentou, setTentou] = useState(false)
   const seletor = useRef(null)
+  const arquivos = useRef(new Map()) // prévia -> arquivo original, que é o que sobe para o Storage
 
   const erros = errosRdo({ data, clima, efetivo, atividades })
   const aviso = (campo) => (tentou || tocados[campo]) && erros[campo]
@@ -27,7 +28,11 @@ function Formulario({ hoje, onSalvar, onFechar }) {
   }
 
   const escolherFotos = (e) => {
-    const novas = [...e.target.files].slice(0, FOTOS_POR_LANCAMENTO - fotos.length).map((a) => URL.createObjectURL(a))
+    const novas = [...e.target.files].slice(0, FOTOS_POR_LANCAMENTO - fotos.length).map((a) => {
+      const previa = URL.createObjectURL(a)
+      arquivos.current.set(previa, a)
+      return previa
+    })
     e.target.value = ''
     setFotos((atuais) => [...atuais, ...novas])
   }
@@ -39,7 +44,7 @@ function Formulario({ hoje, onSalvar, onFechar }) {
   const salvar = () => {
     setTentou(true)
     if (Object.keys(erros).length) return
-    onSalvar({ data, clima, efetivo: Number(efetivo), atividades: atividades.trim(), ocorrencias: ocorrencias.trim(), fotos })
+    onSalvar({ data, clima, efetivo: Number(efetivo), atividades: atividades.trim(), ocorrencias: ocorrencias.trim(), fotos, arquivos: fotos.map((p) => arquivos.current.get(p)) })
   }
 
   return (
@@ -151,14 +156,14 @@ export default function Rdo({ avisar }) {
     const provisorio = { ...campos, id: `novo-${Date.now()}`, obraCodigo: obra.codigo }
     setEstado((e) => ({ status: 'ok', lista: ordenarRdo([provisorio, ...e.lista]) }))
     setAberto(false)
-    const { data, erro } = await salvarRdo(obra, campos)
+    const { data, erro, fotosFalharam } = await salvarRdo(obra, campos)
     if (erro) {
       setEstado((e) => ({ ...e, lista: e.lista.filter((r) => r !== provisorio) }))
       avisar('Não consegui salvar o registro. Tente de novo.')
       return
     }
     setEstado((e) => ({ ...e, lista: ordenarRdo(e.lista.map((r) => (r === provisorio ? data : r))) }))
-    avisar('Registro salvo.')
+    avisar(fotosFalharam ? `Registro salvo, mas ${fotosFalharam} foto(s) não subiram. Tente anexar de novo.` : 'Registro salvo.')
   }
 
   const novo = <button className="btn" onClick={() => setAberto(true)}><Icone nome="plus" />Novo registro</button>

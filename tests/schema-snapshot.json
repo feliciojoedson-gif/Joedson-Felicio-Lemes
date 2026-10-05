@@ -1,36 +1,501 @@
 {
   "_aviso": "Foto do banco em 04/10/2026. Mudou o banco (migration)? Atualize este arquivo no mesmo lote; o check-schema.mjs compara o código com ele.",
   "tabelas": {
-    "profiles": ["id", "auth_uid", "nome", "email", "role", "ativo", "created_at"],
-    "obras": ["id", "codigo", "nome", "endereco", "cliente", "numero_contrato", "data_inicio", "data_fim_contratual", "status", "responsavel_id", "created_at"],
-    "obra_membros": ["id", "obra_id", "profile_id", "created_at"],
-    "frentes": ["id", "obra_id", "nome", "disciplina", "local", "responsavel_id", "inicio_planejado", "fim_planejado", "fim_planejado_original", "peso", "eh_marco", "percentual_realizado", "ultimo_avanco_em", "dias_sem_avanco", "status", "saude", "impacto_prazo_dias", "data_limite_decisao", "created_at"],
-    "apontamentos": ["id", "obra_id", "frente_id", "data", "autor_id", "percentual_acumulado", "houve_avanco", "motivo_sem_avanco", "efetivo_qtd", "equipamentos", "observacao", "created_at"],
-    "fotos": ["id", "obra_id", "frente_id", "apontamento_id", "url", "legenda", "visivel_cliente", "autor_id", "tirada_em", "created_at"],
-    "medicoes": ["id", "obra_id", "frente_id", "mes_referencia", "quantidade", "unidade", "percentual_medido", "valor_medido", "status", "evidencia_url", "observacao", "created_at"],
-    "restricoes": ["id", "obra_id", "frente_id", "tipo", "titulo", "descricao", "criticidade", "status", "responsavel_id", "autor_id", "data_limite", "impacto_prazo_dias", "resolvida_em", "created_at"],
-    "contratos_empreiteiro": ["id", "obra_id", "empreiteiro", "descricao", "status", "modo", "valor_total", "criado_em", "created_at"],
-    "itens_contrato": ["id", "obra_id", "contrato_id", "descricao", "unidade", "quantidade", "preco_unitario", "created_at"],
-    "boletins_empreiteiro": ["id", "obra_id", "contrato_id", "numero", "data", "valor", "linhas", "created_at"],
-    "auditoria": ["id", "obra_id", "tabela", "registro_id", "acao", "usuario_id", "perfil", "campo", "valor_anterior", "valor_novo", "justificativa", "created_at"]
+    "profiles": [
+      "id",
+      "auth_uid",
+      "nome",
+      "email",
+      "role",
+      "ativo",
+      "created_at"
+    ],
+    "obras": [
+      "id",
+      "codigo",
+      "nome",
+      "endereco",
+      "cliente",
+      "numero_contrato",
+      "data_inicio",
+      "data_fim_contratual",
+      "status",
+      "responsavel_id",
+      "created_at"
+    ],
+    "obra_membros": [
+      "id",
+      "obra_id",
+      "profile_id",
+      "created_at"
+    ],
+    "frentes": [
+      "id",
+      "obra_id",
+      "nome",
+      "disciplina",
+      "local",
+      "responsavel_id",
+      "inicio_planejado",
+      "fim_planejado",
+      "fim_planejado_original",
+      "peso",
+      "eh_marco",
+      "percentual_realizado",
+      "ultimo_avanco_em",
+      "dias_sem_avanco",
+      "status",
+      "saude",
+      "impacto_prazo_dias",
+      "data_limite_decisao",
+      "created_at"
+    ],
+    "apontamentos": [
+      "id",
+      "obra_id",
+      "frente_id",
+      "data",
+      "autor_id",
+      "percentual_acumulado",
+      "houve_avanco",
+      "motivo_sem_avanco",
+      "efetivo_qtd",
+      "equipamentos",
+      "observacao",
+      "created_at"
+    ],
+    "fotos": [
+      "id",
+      "obra_id",
+      "frente_id",
+      "apontamento_id",
+      "url",
+      "legenda",
+      "visivel_cliente",
+      "autor_id",
+      "tirada_em",
+      "created_at"
+    ],
+    "medicoes": [
+      "id",
+      "obra_id",
+      "frente_id",
+      "mes_referencia",
+      "quantidade",
+      "unidade",
+      "percentual_medido",
+      "valor_medido",
+      "status",
+      "evidencia_url",
+      "observacao",
+      "created_at"
+    ],
+    "restricoes": [
+      "id",
+      "obra_id",
+      "frente_id",
+      "tipo",
+      "titulo",
+      "descricao",
+      "criticidade",
+      "status",
+      "responsavel_id",
+      "autor_id",
+      "data_limite",
+      "impacto_prazo_dias",
+      "resolvida_em",
+      "created_at"
+    ],
+    "contratos_empreiteiro": [
+      "id",
+      "obra_id",
+      "empreiteiro",
+      "descricao",
+      "status",
+      "modo",
+      "valor_total",
+      "criado_em",
+      "created_at"
+    ],
+    "itens_contrato": [
+      "id",
+      "obra_id",
+      "contrato_id",
+      "descricao",
+      "unidade",
+      "quantidade",
+      "preco_unitario",
+      "created_at"
+    ],
+    "boletins_empreiteiro": [
+      "id",
+      "obra_id",
+      "contrato_id",
+      "numero",
+      "data",
+      "valor",
+      "linhas",
+      "created_at"
+    ],
+    "auditoria": [
+      "id",
+      "obra_id",
+      "tabela",
+      "registro_id",
+      "acao",
+      "usuario_id",
+      "perfil",
+      "campo",
+      "valor_anterior",
+      "valor_novo",
+      "justificativa",
+      "created_at"
+    ],
+    "atividades_planejamento": [
+      "obra_id",
+      "id",
+      "titulo",
+      "parent_id",
+      "ordem",
+      "inicio",
+      "fim",
+      "progresso",
+      "status",
+      "causa",
+      "causa_detalhe",
+      "concluida_em",
+      "inicio_real",
+      "fim_real",
+      "arquivada",
+      "empresa",
+      "subtarefas",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "restricoes_planejamento": [
+      "obra_id",
+      "id",
+      "atividade_id",
+      "descricao",
+      "tipo",
+      "prazo",
+      "responsavel",
+      "resolvida",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "planejamento_config": [
+      "obra_id",
+      "calendario",
+      "baseline",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "materiais_catalogo": [
+      "id",
+      "nome",
+      "unidade",
+      "categoria",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "pedidos_material": [
+      "id",
+      "obra_id",
+      "material_id",
+      "quantidade",
+      "frente",
+      "prioridade",
+      "status",
+      "fornecedor",
+      "previsao_entrega",
+      "historico",
+      "recebimento",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "rdo_registros": [
+      "id",
+      "obra_id",
+      "data",
+      "clima",
+      "efetivo",
+      "atividades",
+      "ocorrencias",
+      "fotos",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "qualidade_pendencias": [
+      "id",
+      "obra_id",
+      "numero_registro",
+      "descricao",
+      "local",
+      "pavimento",
+      "empresa",
+      "prazo",
+      "responsavel",
+      "data_vistoria",
+      "vistoriado_por",
+      "status",
+      "foto",
+      "foto_evidencia",
+      "data_resolucao",
+      "observacoes",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "fvs_modelos": [
+      "id",
+      "codigo",
+      "nome",
+      "categoria",
+      "versao",
+      "grupos",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "fvs_vistorias": [
+      "id",
+      "obra_id",
+      "modelo_id",
+      "modelo_codigo",
+      "modelo_nome",
+      "versao",
+      "ambiente",
+      "grupos",
+      "respostas",
+      "status",
+      "criada_em",
+      "criada_por",
+      "concluida_em",
+      "empresa",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "fvs_ncs": [
+      "id",
+      "obra_id",
+      "codigo",
+      "vistoria_id",
+      "item_id",
+      "item_numero",
+      "titulo",
+      "servico",
+      "ambiente",
+      "severidade",
+      "responsavel",
+      "empresa",
+      "descricao",
+      "solucao",
+      "status",
+      "aberta_em",
+      "fechada_em",
+      "fotos",
+      "timeline",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "gemba_observacoes": [
+      "id",
+      "obra_id",
+      "local",
+      "descricao",
+      "causa_raiz",
+      "acao",
+      "desperdicios",
+      "prazo",
+      "responsavel",
+      "empresa",
+      "status",
+      "foto",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ]
   },
   "views": {
-    "frentes_cliente": ["id", "obra_id", "nome", "local", "disciplina", "inicio_planejado", "fim_planejado", "percentual_realizado", "eh_marco", "peso"],
-    "medicoes_cliente": ["id", "obra_id", "frente_id", "mes_referencia", "quantidade", "unidade", "percentual_medido", "status"],
-    "apontamentos_sem_efetivo": ["id", "obra_id", "frente_id", "data", "autor_id", "percentual_acumulado", "houve_avanco", "motivo_sem_avanco", "equipamentos", "observacao", "created_at"],
-    "perfis_colegas": ["id", "nome", "role"]
+    "frentes_cliente": [
+      "id",
+      "obra_id",
+      "nome",
+      "local",
+      "disciplina",
+      "inicio_planejado",
+      "fim_planejado",
+      "percentual_realizado",
+      "eh_marco",
+      "peso"
+    ],
+    "medicoes_cliente": [
+      "id",
+      "obra_id",
+      "frente_id",
+      "mes_referencia",
+      "quantidade",
+      "unidade",
+      "percentual_medido",
+      "status"
+    ],
+    "apontamentos_sem_efetivo": [
+      "id",
+      "obra_id",
+      "frente_id",
+      "data",
+      "autor_id",
+      "percentual_acumulado",
+      "houve_avanco",
+      "motivo_sem_avanco",
+      "equipamentos",
+      "observacao",
+      "created_at"
+    ],
+    "perfis_colegas": [
+      "id",
+      "nome",
+      "role"
+    ]
   },
   "checks": {
-    "obras.status": ["Planejamento", "Ativa", "Suspensa", "Encerrada", "Arquivada"],
-    "frentes.disciplina": ["Civil", "Mecânica", "Tubulação", "Elétrica", "Instrumentação", "Andaimes", "Pintura", "Outra"],
-    "frentes.status": ["Não iniciada", "Em andamento", "Parada", "Concluída"],
-    "apontamentos.motivo_sem_avanco": ["Chuva", "Falta de material", "Falta de liberação", "Falta de efetivo", "Interferência", "Retrabalho", "Outro"],
-    "medicoes.status": ["Rascunho", "Enviada", "Aprovada pela Gestão", "Aprovada"],
-    "restricoes.tipo": ["Restrição", "RFI", "Risco", "Pleito potencial"],
-    "restricoes.criticidade": ["Alta", "Média", "Baixa"],
-    "restricoes.status": ["Aberta", "Em tratamento", "Resolvida"],
-    "contratos_empreiteiro.status": ["elaboracao", "enviado", "ativo", "concluido"],
-    "contratos_empreiteiro.modo": ["global", "escopo"],
-    "itens_contrato.unidade": ["m2", "m", "un", "vb"]
+    "obras.status": [
+      "Planejamento",
+      "Ativa",
+      "Suspensa",
+      "Encerrada",
+      "Arquivada"
+    ],
+    "frentes.disciplina": [
+      "Civil",
+      "Mecânica",
+      "Tubulação",
+      "Elétrica",
+      "Instrumentação",
+      "Andaimes",
+      "Pintura",
+      "Outra"
+    ],
+    "frentes.status": [
+      "Não iniciada",
+      "Em andamento",
+      "Parada",
+      "Concluída"
+    ],
+    "apontamentos.motivo_sem_avanco": [
+      "Chuva",
+      "Falta de material",
+      "Falta de liberação",
+      "Falta de efetivo",
+      "Interferência",
+      "Retrabalho",
+      "Outro"
+    ],
+    "medicoes.status": [
+      "Rascunho",
+      "Enviada",
+      "Aprovada pela Gestão",
+      "Aprovada"
+    ],
+    "restricoes.tipo": [
+      "Restrição",
+      "RFI",
+      "Risco",
+      "Pleito potencial"
+    ],
+    "restricoes.criticidade": [
+      "Alta",
+      "Média",
+      "Baixa"
+    ],
+    "restricoes.status": [
+      "Aberta",
+      "Em tratamento",
+      "Resolvida"
+    ],
+    "contratos_empreiteiro.status": [
+      "elaboracao",
+      "enviado",
+      "ativo",
+      "concluido"
+    ],
+    "contratos_empreiteiro.modo": [
+      "global",
+      "escopo"
+    ],
+    "itens_contrato.unidade": [
+      "m2",
+      "m",
+      "un",
+      "vb"
+    ],
+    "atividades_planejamento.status": [
+      "a_fazer",
+      "andamento",
+      "concluida",
+      "nao_realizado"
+    ],
+    "restricoes_planejamento.tipo": [
+      "Material",
+      "Mão de Obra",
+      "Método",
+      "Equipamento",
+      "Projeto",
+      "Segurança",
+      "Logística"
+    ],
+    "materiais_catalogo.categoria": [
+      "grosso",
+      "acabamento",
+      "instalacoes"
+    ],
+    "pedidos_material.status": [
+      "solicitar",
+      "cotacao",
+      "comprado",
+      "almoxarifado",
+      "entregue"
+    ],
+    "rdo_registros.clima": [
+      "sol",
+      "nublado",
+      "chuva"
+    ],
+    "qualidade_pendencias.status": [
+      "pendente",
+      "em_andamento",
+      "resolvido"
+    ],
+    "fvs_modelos.categoria": [
+      "Impermeabilização",
+      "Estrutura",
+      "Instalações",
+      "Acabamento"
+    ],
+    "fvs_ncs.status": [
+      "aberta",
+      "encaminhada",
+      "corrigida",
+      "fechada"
+    ],
+    "fvs_ncs.severidade": [
+      "Baixa",
+      "Média",
+      "Alta"
+    ],
+    "gemba_observacoes.status": [
+      "pendente",
+      "em_andamento",
+      "resolvido"
+    ]
   }
 }

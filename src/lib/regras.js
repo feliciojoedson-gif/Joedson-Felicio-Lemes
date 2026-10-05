@@ -70,6 +70,8 @@ const PERMISSOES = {
   administrar: ['Coordenador'],
   rodarAtualizacao: ['Coordenador'],
   gerirQualidade: ['Coordenador', 'Planejamento', 'Engenharia', 'Produção'],
+  importarPlanejamento: ['Coordenador', 'Planejamento'], // importar planilha pode apagar atividades (a RLS repete)
+  apagarQualidade: ['Coordenador', 'Planejamento', 'Engenharia'], // modelos de FVS e observações de Gemba (a RLS repete)
   gerirMateriais: ['Coordenador', 'Planejamento', 'Produção'],
   gerirEmpreiteiros: ['Coordenador', 'Planejamento', 'Medição'],
 }

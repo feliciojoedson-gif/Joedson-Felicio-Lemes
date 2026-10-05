@@ -4,7 +4,7 @@ import {
   finalizarVistoria, itensDaVistoria, kpisFvs, marcarItem, normalizarModelo, novaNc, novaVistoria, numerarGrupos, ordenarNcs,
   percentualConforme, proximoCodigoNc, progressoVistoria, tomConformidade,
 } from '../src/lib/qualidade.js'
-import { modelosFvs, ncsDeExemplo, vistoriasDeExemplo } from '../src/lib/mockData.js'
+import { modelosFvs, ncsDeExemplo, vistoriasDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

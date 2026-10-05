@@ -55,7 +55,8 @@ export function QualidadeProvider({ children }) {
       const { data, erro } = await operacao()
       if (erro || !data) throw erro || new Error('sem retorno')
       if (depois) mutar((e) => depois(e, data))
-      return null
+      // O registro está salvo; só a foto ficou de fora. A tela mostra o aviso sem desfazer nada.
+      return data.fotoFalhou ? 'Registro salvo, mas a foto não subiu. Tente anexar de novo.' : null
     } catch (e) {
       setEstado(antes)
       return e?.regra ? e.message : FALHA

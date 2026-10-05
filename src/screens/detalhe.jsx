@@ -1,14 +1,23 @@
 import { useState } from 'react'
 import { BarraAvanco, Chip, Icone, Modal, Topo } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
+import { FormFrente, FormMedicao, FormRestricao } from './cadastros.jsx'
+import { liberarFotoAoCliente } from '../lib/dados.js'
 import {
   formatarData, formatarDataCurta, formatarDinheiro, formatarMes, planejadoHoje, pode,
   rotuloSemaforo, semaforo,
 } from '../lib/regras.js'
 
 export default function Detalhe({ goto, params, avisar, de }) {
-  const { usuario, hoje, frentes, apontamentos, fotos, restricoes, medicoes, nomeDe } = useDados()
+  const { usuario, obra, hoje, frentes, apontamentos, fotos, restricoes, medicoes, nomeDe, recarregar } = useDados()
   const [foto, setFoto] = useState(null)
+  const [form, setForm] = useState(null) // 'editar' | 'medir' | 'restricao'
+  const liberar = async (f) => {
+    const { erro } = await liberarFotoAoCliente(obra, f.id, !f.visivel_cliente)
+    if (erro) return avisar('Não consegui mudar a liberação da foto. Tente de novo.')
+    setFoto(null)
+    recarregar()
+  }
   const { role } = usuario
   const f = frentes.find((x) => x.id === params.id)
   if (!f) return <div className="empty"><h3>Frente não encontrada</h3></div>
@@ -21,7 +30,6 @@ export default function Detalhe({ goto, params, avisar, de }) {
   const restricoesDaFrente = restricoes.filter((r) => r.frente_id === f.id)
   const medicoesDaFrente = medicoes.filter((m) => m.frente_id === f.id)
   const mostraDias = f.status !== 'Concluída' && f.status !== 'Não iniciada' && !f.eh_marco
-  const toastEtapa = (t) => avisar(`${t} chega na próxima etapa.`)
 
   return (
     <>
@@ -133,8 +141,9 @@ export default function Detalhe({ goto, params, avisar, de }) {
               <div className="section-title">Ações</div>
               <div className="form-actions" style={{ gridTemplateColumns: '1fr' }}>
                 {pode(role, 'lancarDiario') && !f.eh_marco && <button className="btn" onClick={() => goto('diario', { frenteId: f.id })}><Icone nome="diario" />Lançar diário</button>}
-                {pode(role, 'criarMedicao') && <button className="btn secondary" onClick={() => toastEtapa('O formulário de medição')}>Medir</button>}
-                {pode(role, 'criarRestricao') && <button className="btn secondary" onClick={() => toastEtapa('O formulário de restrição')}>Nova restrição</button>}
+                {pode(role, 'criarMedicao') && <button className="btn secondary" onClick={() => setForm('medir')}>Medir</button>}
+                {pode(role, 'criarRestricao') && <button className="btn secondary" onClick={() => setForm('restricao')}>Nova restrição</button>}
+                {pode(role, 'editarFrente') && <button className="btn secondary" onClick={() => setForm('editar')}>Editar frente</button>}
               </div>
             </>
           )}
@@ -147,12 +156,15 @@ export default function Detalhe({ goto, params, avisar, de }) {
           <p style={{ margin: '0 0 6px', fontWeight: 800 }}>{foto.legenda}</p>
           <p className="mono" style={{ margin: '0 0 12px' }}>{formatarData(foto.tirada_em.slice(0, 10))}{foto.visivel_cliente ? ' · liberada para o cliente' : ''}</p>
           {pode(role, 'liberarFoto') && (
-            <button className="btn accent block" style={{ marginBottom: 10 }} onClick={() => toastEtapa('Gravar a liberação ao cliente')}>
+            <button className="btn accent block" style={{ marginBottom: 10 }} onClick={() => liberar(foto)}>
               {foto.visivel_cliente ? 'Ocultar do cliente' : 'Mostrar ao cliente'}
             </button>
           )}
         </Modal>
       )}
+      {form === 'editar' && <FormFrente frente={f} onFechar={() => setForm(null)} avisar={avisar} onExcluida={() => goto(de || 'frentes')} />}
+      {form === 'medir' && <FormMedicao frente={f} onFechar={() => setForm(null)} avisar={avisar} />}
+      {form === 'restricao' && <FormRestricao frenteId={f.id} onFechar={() => setForm(null)} avisar={avisar} />}
     </>
   )
 }

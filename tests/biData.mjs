@@ -5,8 +5,8 @@ import {
 import { calendarioPadrao } from '../src/lib/planejamento.js'
 import {
   contratos, diarios, gembaDeExemplo, medicoes, ncsDeExemplo, pedidos, pendenciasDeExemplo, vistoriasDeExemplo,
-} from '../src/lib/mockData.js'
-import { planejamentoCompleto } from '../src/lib/mockData.js'
+} from './fixtures/mockData.js'
+import { planejamentoCompleto } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

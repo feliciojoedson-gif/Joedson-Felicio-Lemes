@@ -1,6 +1,6 @@
-import { calendarioPadrao } from './planejamento.js'
+import { calendarioPadrao } from '../../src/lib/planejamento.js'
 
-// Dados de exemplo do Diário de Obra (RDO), dos Materiais e do Planejamento. Só `lib/dados.js` importa este arquivo.
+// Dados de exemplo do Diário de Obra (RDO), dos Materiais e do Planejamento. Massa de teste (tests/*.mjs): NENHUMA tela nem o dados.js importa este arquivo; o app lê tudo do Supabase.
 // `obraCodigo` é o código da obra (U12, T405): os ids do banco real não são os do mock.
 
 // Foto de exemplo: um quadro colorido, para a miniatura aparecer sem arquivo de verdade.

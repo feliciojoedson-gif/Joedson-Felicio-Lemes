@@ -3,7 +3,7 @@ import {
   acrescentarObservacao, aplicarMudanca, carimbo, diasDeAtraso, errosMudanca, errosPendencia, filtrarPendencias, kpisPendencias,
   novaPendencia, ordenarPendencias, pendentesPorResponsavel, proximoNumero, somarDias, vencida,
 } from '../src/lib/qualidade.js'
-import { pendenciasDeExemplo } from '../src/lib/mockData.js'
+import { pendenciasDeExemplo } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

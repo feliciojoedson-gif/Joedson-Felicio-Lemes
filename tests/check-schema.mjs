@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as regras from '../src/lib/regras.js'
+import { CATEGORIAS_FVS, COLUNAS_GEMBA, ORDEM_STATUS, SEVERIDADES, STATUS_NC } from '../src/lib/qualidade.js'
+import { STATUS_ATIVIDADE, TIPOS_RESTRICAO_PLAN } from '../src/lib/planejamento.js'
 import { COLUNAS_CONTRATO, MODOS, UNIDADES } from '../src/lib/empreiteiros.js'
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -46,6 +48,16 @@ const vocabulario = {
   'contratos_empreiteiro.status': COLUNAS_CONTRATO.map((c) => c.id),
   'contratos_empreiteiro.modo': Object.keys(MODOS),
   'itens_contrato.unidade': UNIDADES,
+  'materiais_catalogo.categoria': Object.keys(regras.CATEGORIAS_MATERIAL),
+  'pedidos_material.status': regras.COLUNAS_MATERIAL.map((c) => c.id),
+  'rdo_registros.clima': regras.CLIMAS.map((c) => c.id),
+  'qualidade_pendencias.status': ORDEM_STATUS,
+  'fvs_modelos.categoria': CATEGORIAS_FVS,
+  'fvs_ncs.status': Object.keys(STATUS_NC),
+  'fvs_ncs.severidade': SEVERIDADES,
+  'gemba_observacoes.status': COLUNAS_GEMBA.map(([k]) => k),
+  'atividades_planejamento.status': STATUS_ATIVIDADE,
+  'restricoes_planejamento.tipo': TIPOS_RESTRICAO_PLAN.map((t) => t.rotulo),
 }
 for (const [chave, lista] of Object.entries(vocabulario)) {
   const banco = snap.checks[chave]
@@ -59,7 +71,7 @@ for (const chave of Object.keys(snap.checks)) {
 }
 
 // 4) Toda tabela de lançamento tem obra_id (app multi-obra).
-for (const t of ['frentes', 'apontamentos', 'fotos', 'medicoes', 'restricoes', 'contratos_empreiteiro', 'itens_contrato', 'boletins_empreiteiro']) {
+for (const t of ['frentes', 'apontamentos', 'fotos', 'medicoes', 'restricoes', 'contratos_empreiteiro', 'itens_contrato', 'boletins_empreiteiro', 'atividades_planejamento', 'restricoes_planejamento', 'planejamento_config', 'pedidos_material', 'rdo_registros', 'qualidade_pendencias', 'fvs_vistorias', 'fvs_ncs', 'gemba_observacoes']) {
   if (!snap.tabelas[t].includes('obra_id')) erros.push(`${t} sem obra_id no snapshot`)
 }
 

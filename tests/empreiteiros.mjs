@@ -5,7 +5,7 @@ import {
   quantidadeDaEntrada, recebeMedicao, saldoDoContrato, saldoDoItem, valorDaEntradaGlobal, valorDaQuantidade, valorDoCadastro,
   pedeCadastroDoValor, mostraMedido, percentualAMedir, acumuladoDepois, verificarMovimento,
 } from '../src/lib/empreiteiros.js'
-import { contratos, itensContrato, medicoes } from '../src/lib/mockData.js'
+import { contratos, itensContrato, medicoes } from './fixtures/mockData.js'
 
 let ok = 0
 let tot = 0

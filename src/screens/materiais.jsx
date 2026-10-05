@@ -148,6 +148,7 @@ function FormRecebimento({ onSalvar, onFechar }) {
   const [estadoOk, setEstadoOk] = useState(null)
   const [avarias, setAvarias] = useState('')
   const [foto, setFoto] = useState('')
+  const [arquivoNF, setArquivoNF] = useState(null)
   const seletor = useRef(null)
   const erros = errosRecebimento({ qtdBateNF, estadoOk })
   const { aviso, tocar, tentar } = useAvisos(erros)
@@ -158,6 +159,7 @@ function FormRecebimento({ onSalvar, onFechar }) {
     if (!arquivo) return
     if (foto) URL.revokeObjectURL(foto)
     setFoto(URL.createObjectURL(arquivo))
+    setArquivoNF(arquivo)
   }
   // A prévia só é liberada se a pessoa desistir; ao salvar ela segue no card do pedido.
   const aoFechar = () => { if (foto) URL.revokeObjectURL(foto); onFechar() }
@@ -181,7 +183,7 @@ function FormRecebimento({ onSalvar, onFechar }) {
             </button>
           </div>
           <div className="form-actions">
-            <button type="button" className="btn" onClick={() => tentar() && onSalvar({ qtdBateNF, estadoOk, avarias, fotoNF: foto })}>Confirmar recebimento</button>
+            <button type="button" className="btn" onClick={() => tentar() && onSalvar({ qtdBateNF, estadoOk, avarias, fotoNF: foto, arquivoNF })}>Confirmar recebimento</button>
             <button type="button" className="btn secondary" onClick={fechar}>Cancelar</button>
           </div>
         </>
@@ -298,13 +300,13 @@ export default function Materiais({ avisar }) {
     const novo = aplicarMovimento(p, status, dados, hoje)
     trocarPedido(p, novo)
     setAberto(null)
-    const { erro } = await moverPedido(obra, p.id, status, dados, hoje)
+    const { erro, fotoFalhou } = await moverPedido(obra, p.id, status, dados, hoje)
     if (erro) {
       trocarPedido(novo, p)
       avisar('Não consegui mover o pedido. Tente de novo.')
       return
     }
-    avisar(`Pedido movido para ${COLUNAS_MATERIAL.find((c) => c.id === status).rotulo}.`)
+    avisar(fotoFalhou ? 'Pedido movido, mas a foto da nota fiscal não subiu. Tente de novo.' : `Pedido movido para ${COLUNAS_MATERIAL.find((c) => c.id === status).rotulo}.`)
   }
   // Compra, recebimento e entrega pedem dados antes; as demais trocas são diretas.
   const pedirMover = (p, status) => {
