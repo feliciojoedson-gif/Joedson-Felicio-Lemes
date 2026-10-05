@@ -42,7 +42,7 @@ Diff que toca em `src/lib/supabase.js`, `src/lib/dados.js`, `src/App.jsx` (sess�
 
 No ar em **https://joedson-felicio-lemes.vercel.app** (Vercel, plano Hobby). Repositório: `feliciojoedson-gif/Joedson-Felicio-Lemes`, branch `main`; o nome é o que o projeto já tinha e foi mantido de propósito. Padrão: a pessoa diz "sobe pro GitHub", o agente sobe com git, e a Vercel publica sozinha. A pessoa não digita comando.
 Variáveis no painel da Vercel: `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (**não** é `ANON_KEY`; o roteiro genérico da skill usa outro nome). Não há conector nem CLI da Vercel nesta máquina: mudança no painel é clique da pessoa.
-Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `Pendente` e o Coordenador libera). Fechar quebraria a liberação.
+**Cadastro público FECHADO** (Supabase > Authentication > Sign In / Providers: `disable_signup: true` e `mailer_autoconfirm: true`, conferidos em 05/10/2026 por `/auth/v1/settings`). Ninguém cria conta sozinho: quem cadastra é o Coordenador pelo **Painel de admin** (ícone com a inicial do nome, no topo > Painel de admin > Usuários). A tela de entrada só tem Entrar; "esqueci minha senha" manda pedir uma senha nova ao administrador. **A proteção Captcha do Auth tem que ficar DESLIGADA** (Authentication > Attack Protection): o app não tem captcha e, ligada, todo login falha com "Não consegui concluir".
 
 ## Estado atual (fim da sessão de 04/10/2026)
 
@@ -69,6 +69,10 @@ Cadastro público do Supabase fica **aberto** de propósito (conta nova nasce `P
 - 2FA da conta da Vercel não configurado. Plano grátis da Vercel tem restrição de uso comercial: conferir os termos antes de a equipe usar.
 
 **Próximo passo:** Fase 5 do plano de migração: conferir RLS de todas as tabelas, testes de permissão pelo navegador com contas reais de cada perfil, advisors do Supabase, e remover `tests/fixtures/mockData.js` quando os testes deixarem de depender dele.
+
+## Painel de admin e a função admin-usuarios
+
+Tela `src/screens/admin.jsx` (abas Obras e Usuários; usuários em `src/screens/usuarios.jsx`). Abre só pelo menu do avatar e só para quem tem `pode(role, 'administrar')` (Coordenador; o papel Administrador é só leitura). Criar login, senha provisória (mostrada UMA vez), trocar perfil/obras, bloquear/desbloquear e excluir passam pela **Edge Function `admin-usuarios`** (`supabase/functions/admin-usuarios/index.ts`, publicada com verificação de JWT): a chave de serviço só existe lá (segredo do Supabase), nunca no front. A função descobre quem chama pelo token e confere NO BANCO que é Coordenador ativo; recusa mudar/bloquear/excluir a própria conta e o último Coordenador ativo; excluir exige digitar o nome e recusa se a pessoa tem registros lançados (bloquear no lugar). Bloquear = `profiles.ativo=false` + ban no Auth. Obras de cada pessoa = `obra_membros` (RLS via `private.veo_obra`). O banco recusa deixar o app sem Coordenador ativo (gatilho `private.ultimo_coordenador`, com lock: vale mesmo com dois pedidos simultâneos) e, pelo navegador, só o próprio NOME muda em `profiles` e ninguém grava em `obra_membros` (grants revogados): papel, situação e obras só mudam pela função. O gatilho `profiles_protege` impede o navegador de mudar o próprio perfil; a função grava como serviço (sem sessão de usuário), que ele libera. Para publicar de novo a função: pelo conector do Supabase (deploy_edge_function, verify_jwt true).
 
 ## Módulo Planejamento (Last Planner)
 

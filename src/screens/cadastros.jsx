@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useDados } from '../lib/DadosContext.jsx'
 import {
-  atualizarFrente, atualizarObra, atualizarPerfil, criarFrente, criarMedicaoDaFrente, criarObra, criarRestricaoCadastro, definirObrasDoPerfil,
-  excluirFrente, liberarConta,
+  atualizarFrente, atualizarObra, criarFrente, criarMedicaoDaFrente, criarObra, criarRestricaoCadastro, excluirFrente,
 } from '../lib/dados.js'
-import { errosFrente, errosLiberacao, errosMedicaoDaFrente, errosObra, errosRestricaoDaObra, PERFIS_LIBERAVEIS, tiposQueUmPerfilCria } from '../lib/cadastros.js'
-import { CRITICIDADES, DISCIPLINAS, pode, STATUS_OBRA, veTodasAsObras } from '../lib/regras.js'
+import { errosFrente, errosMedicaoDaFrente, errosObra, errosRestricaoDaObra, tiposQueUmPerfilCria } from '../lib/cadastros.js'
+import { CRITICIDADES, DISCIPLINAS, pode, STATUS_OBRA } from '../lib/regras.js'
 import { Aviso, Folha, useAvisos, useConfirmar } from './planejamento/ui.jsx'
 
 // Formulários de cadastro (frente, restrição, medição, obra, acesso de pessoas). Cada um valida na hora com as regras de
@@ -37,7 +36,7 @@ function useEnvio(onFechar, avisar, mensagemOk) {
   return { erro, enviando, enviar }
 }
 
-function Campo({ id, rotulo, erro, children }) {
+export function Campo({ id, rotulo, erro, children }) {
   return (
     <div className="field">
       <label htmlFor={id}>{rotulo}</label>
@@ -47,7 +46,7 @@ function Campo({ id, rotulo, erro, children }) {
   )
 }
 
-const Opcoes = ({ lista, vazio }) => (
+export const Opcoes = ({ lista, vazio }) => (
   <>
     {vazio && <option value="">{vazio}</option>}
     {lista.map((o) => (Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o}</option>))}
@@ -271,65 +270,6 @@ export function FormObra({ obra, onFechar, avisar }) {
           <Aviso texto={erro} />
           <div className="form-actions">
             <button type="button" className="btn" disabled={enviando} onClick={() => tentar() && enviar(() => (obra ? atualizarObra(obra.id, c) : criarObra(c)))}>{enviando ? 'Salvando…' : 'Salvar'}</button>
-            <button type="button" className="btn secondary" onClick={fechar}>Cancelar</button>
-          </div>
-        </>
-      )}
-    </Folha>
-  )
-}
-
-// ---------- Acesso de pessoas (liberar conta nova, trocar perfil, bloquear, escolher obras) ----------
-
-export function FormAcesso({ pessoa, onFechar, avisar }) {
-  const { obras, membros } = useDados()
-  const pendente = pessoa.role === 'Pendente'
-  const [c, setC] = useState({
-    role: pendente ? '' : pessoa.role, ativo: pessoa.ativo,
-    obraIds: membros.filter((m) => m.profile_id === pessoa.id).map((m) => m.obra_id),
-  })
-  const erros = errosLiberacao(c, veTodasAsObras)
-  const { aviso, tentar } = useAvisos(erros)
-  const { erro, enviando, enviar } = useEnvio(onFechar, avisar, pendente ? 'Conta liberada.' : 'Acesso atualizado.')
-  const alternar = (id) => setC((x) => ({ ...x, obraIds: x.obraIds.includes(id) ? x.obraIds.filter((o) => o !== id) : [...x.obraIds, id] }))
-  const todas = veTodasAsObras(c.role)
-  const salvar = () => tentar() && enviar(async () => {
-    const obraIds = todas ? [] : c.obraIds
-    const r = pendente ? await liberarConta(pessoa.id, c.role, obraIds) : await atualizarPerfil(pessoa.id, { role: c.role, ativo: c.ativo })
-    if (r.erro || pendente) return r
-    return definirObrasDoPerfil(pessoa.id, obraIds)
-  })
-  return (
-    <Folha titulo={pendente ? `Liberar ${pessoa.nome}` : `Acesso de ${pessoa.nome}`} sujo={false} onFechar={onFechar}>
-      {(fechar) => (
-        <>
-          <p className="mono">{pessoa.email}</p>
-          <Campo id="ac-role" rotulo="Perfil" erro={aviso('role')}>
-            <select id="ac-role" className="input" value={c.role} onChange={(e) => setC((x) => ({ ...x, role: e.target.value }))}>
-              <Opcoes lista={PERFIS_LIBERAVEIS} vazio="Escolha…" />
-            </select>
-          </Campo>
-          {c.role && (todas
-            ? <p className="mono">Este perfil enxerga todas as obras.</p>
-            : (
-              <div className="field">
-                <span className="lb">Obras liberadas</span>
-                {obras.map((o) => (
-                  <label key={o.id} style={{ display: 'block' }}>
-                    <input type="checkbox" checked={c.obraIds.includes(o.id)} onChange={() => alternar(o.id)} /> {o.codigo} — {o.nome}
-                  </label>
-                ))}
-                <Aviso texto={aviso('obras')} />
-              </div>
-            ))}
-          {!pendente && (
-            <div className="field">
-              <label><input type="checkbox" checked={c.ativo} onChange={(e) => setC((x) => ({ ...x, ativo: e.target.checked }))} /> Conta ativa (desmarque para bloquear o acesso)</label>
-            </div>
-          )}
-          <Aviso texto={erro} />
-          <div className="form-actions">
-            <button type="button" className="btn" disabled={enviando} onClick={salvar}>{enviando ? 'Salvando…' : pendente ? 'Liberar' : 'Salvar'}</button>
             <button type="button" className="btn secondary" onClick={fechar}>Cancelar</button>
           </div>
         </>

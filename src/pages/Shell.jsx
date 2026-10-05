@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { Icone, Logo } from '../components/index.jsx'
+import AvatarMenu from '../components/AvatarMenu.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
-import { itensDaBarra, menuDoPerfil, ROTULOS, telaInicial } from '../lib/regras.js'
+import { itensDaBarra, menuDoPerfil, pode, ROTULOS, telaInicial } from '../lib/regras.js'
 import Painel from '../screens/painel.jsx'
 import Frentes from '../screens/frentes.jsx'
 import Detalhe from '../screens/detalhe.jsx'
@@ -48,9 +49,11 @@ export default function Shell({ onSair }) {
   }
 
   const { barra, mais } = itensDaBarra(usuario.role)
-  const tela = route.screen === 'detalhe' ? (route.de || 'frentes') : route.screen
+  // O painel de admin não está nos menus: quem não administra e tenta abri-lo direto volta para o Início.
+  const telaPedida = route.screen === 'admin' && !pode(usuario.role, 'administrar') ? telaInicial(usuario.role) : route.screen
+  const tela = telaPedida === 'detalhe' ? (route.de || 'frentes') : telaPedida
   const destacarNaBarra = (k) => k === tela || (k === 'mais' && mais.includes(tela))
-  const Corpo = TELAS[route.screen]
+  const Corpo = TELAS[telaPedida]
 
   return (
     <div className="app">
@@ -74,6 +77,7 @@ export default function Shell({ onSair }) {
             {obras.map((o) => <option key={o.id} value={o.id}>{o.codigo} — {o.nome}</option>)}
             {!obra && <option value="">Nenhuma obra liberada</option>}
           </select>
+          <AvatarMenu usuario={usuario} podeAdministrar={pode(usuario.role, 'administrar')} onAdmin={() => goto('admin')} onSair={onSair} />
         </div>
         {obra
           ? <section key={obra.id}><Corpo goto={goto} params={route.params} avisar={avisar} de={route.de} onSair={onSair} /></section>

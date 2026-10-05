@@ -567,3 +567,14 @@ button.obra { cursor: pointer; }
   .med-linha .med-item { grid-column: 1 / -1; }
   .med-linha > .btn, .med-linha > .erro { grid-column: 1 / -1; }
 }
+
+/* menu do avatar (topo) */
+.avatar-raiz { position: relative; flex: none; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; background: var(--ink); color: #fff; font-family: var(--cond); font-weight: 800; font-size: 1.3rem; cursor: pointer; }
+.avatar:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.avatar-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; background: #fff; color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); padding: 6px; z-index: 30; }
+.avatar-quem { padding: 10px 12px; border-bottom: 1px solid #E3DEDB; margin-bottom: 4px; }
+.avatar-quem b { display: block; }
+.avatar-quem span { font-size: .85rem; color: var(--muted); }
+.avatar-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 12px; min-height: 44px; border-radius: 8px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.avatar-menu button:hover { background: #F3EFED; }

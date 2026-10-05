@@ -1,27 +1,24 @@
 import { useState } from 'react'
 import { Aba, Chip, Icone, Topo, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
-import { formatarData, pode, veTodasAsObras } from '../lib/regras.js'
-import { FormAcesso, FormObra } from './cadastros.jsx'
+import { formatarData, pode } from '../lib/regras.js'
+import { FormObra } from './cadastros.jsx'
+import PainelUsuarios from './usuarios.jsx'
 
 const tomDaObra = { Planejamento: 'neutral', Ativa: 'ok', Suspensa: 'warn', Encerrada: 'neutral', Arquivada: 'neutral' }
 
 // Administração é cadastro (obras e pessoas), não lançamento: é a única tela que
 // lista todas as obras de uma vez, de propósito.
 export default function Admin({ avisar }) {
-  const { usuario, obras, perfis, membros, nomeDe } = useDados()
+  const { usuario, obras, nomeDe } = useDados()
   const [aba, setAba] = useState('obras')
   const [formObra, setFormObra] = useState(null) // null | {} (nova) | obra
-  const [acesso, setAcesso] = useState(null) // pessoa
   const podeAdministrar = pode(usuario.role, 'administrar')
 
-  const pendentes = perfis.filter((p) => p.role === 'Pendente')
-  const ativos = perfis.filter((p) => p.role !== 'Pendente')
-  const qtdObras = (p) => (veTodasAsObras(p.role) ? 'todas as obras' : `${membros.filter((m) => m.profile_id === p.id).length} obras`)
 
   return (
     <>
-      <Topo titulo="Administração">
+      <Topo titulo="Painel de admin">
         {aba === 'obras' && podeAdministrar && <button className="btn" onClick={() => setFormObra({})}><Icone nome="plus" />Nova obra</button>}
       </Topo>
       <Aba valor={aba} onTroca={setAba} opcoes={[['obras', 'Obras'], ['usuarios', 'Usuários']]} />
@@ -43,31 +40,8 @@ export default function Admin({ avisar }) {
           </div>
         )))}
 
-      {aba === 'usuarios' && (
-        <>
-          <div className="section-title">Contas aguardando liberação</div>
-          {pendentes.length === 0
-            ? <span className="mono">Nenhuma conta aguardando liberação.</span>
-            : pendentes.map((p) => (
-              <div className="row-card" key={p.id}>
-                <div><div className="t">{p.nome} <span className="pending">Aguardando liberação</span></div><div className="s">{p.email}</div></div>
-                {podeAdministrar && <button className="btn secondary" onClick={() => setAcesso(p)}>Liberar</button>}
-              </div>
-            ))}
-          <div className="section-title">Usuários</div>
-          {ativos.map((p) => (
-            <div className="row-card" key={p.id}>
-              <div><div className="t">{p.nome}</div><div className="s">{p.role} · {qtdObras(p)}</div></div>
-              <div>
-                <Chip tom={p.ativo ? 'ok' : 'neutral'}>{p.ativo ? 'Ativo' : 'Bloqueado'}</Chip>
-                {podeAdministrar && p.id !== usuario.id && <button type="button" className="btn secondary" style={{ marginTop: 6 }} onClick={() => setAcesso(p)}>Acesso</button>}
-              </div>
-            </div>
-          ))}
-        </>
-      )}
+      {aba === 'usuarios' && <PainelUsuarios avisar={avisar} />}
       {formObra && <FormObra obra={formObra.id ? formObra : null} onFechar={() => setFormObra(null)} avisar={avisar} />}
-      {acesso && <FormAcesso pessoa={acesso} onFechar={() => setAcesso(null)} avisar={avisar} />}
     </>
   )
 }

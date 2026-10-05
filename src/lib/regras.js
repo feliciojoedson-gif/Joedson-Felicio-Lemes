@@ -16,7 +16,7 @@ export const STATUS_RESTRICAO = ['Aberta', 'Em tratamento', 'Resolvida']
 // ---------- Menus e permissões ----------
 
 export const MENUS = {
-  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'qualidade', 'relatorios', 'rdo', 'admin', 'perfil'],
+  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'qualidade', 'relatorios', 'rdo', 'perfil'],
   Planejamento: ['painel', 'frentes', 'planejamento', 'medicoes', 'materiais', 'qualidade', 'relatorios', 'perfil'],
   Engenharia: ['restricoes', 'frentes', 'qualidade', 'perfil'],
   Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'materiais', 'planejamento', 'qualidade', 'perfil'],
@@ -25,7 +25,7 @@ export const MENUS = {
   'Gestão Contratual': ['restricoes', 'medicoes', 'frentes', 'perfil'],
   Cliente: ['painel', 'fotos', 'perfil'],
   Diretoria: ['painel', 'medicoes', 'restricoes', 'qualidade', 'relatorios', 'perfil'],
-  Administrador: ['painel', 'medicoes', 'restricoes', 'admin', 'perfil'],
+  Administrador: ['painel', 'medicoes', 'restricoes', 'perfil'],
 }
 
 export const ROTULOS = {
@@ -40,7 +40,7 @@ export const ROTULOS = {
   qualidade: 'Qualidade',
   relatorios: 'Relatórios',
   fotos: 'Fotos',
-  admin: 'Administração',
+  admin: 'Painel de admin', // fora dos menus: abre pelo ícone do nome, no topo (só para quem pode administrar)
   perfil: 'Meu perfil',
   mais: 'Mais',
 }

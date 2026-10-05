@@ -18,19 +18,13 @@ const MENSAGENS = {
   'Invalid login credentials': 'Email ou senha incorretos.',
   'Email not confirmed': 'Confirme seu email pelo link que enviamos e entre de novo.',
   'User already registered': 'Já existe uma conta com este email.',
+  'User is banned': 'Conta bloqueada. Fale com o administrador.',
 }
 const traduzir = (erro) => MENSAGENS[erro.message] || 'Não consegui concluir. Tente de novo.'
 
 export async function entrar(email, senha) {
   const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
   return error ? traduzir(error) : null
-}
-
-// Conta nova nasce `Pendente` (gatilho do banco). `confirmar` = o Supabase mandou email de confirmação.
-export async function cadastrar(nome, email, senha) {
-  const { data, error } = await supabase.auth.signUp({ email, password: senha, options: { data: { nome } } })
-  if (error) return { erro: traduzir(error), confirmar: false }
-  return { erro: null, confirmar: !data.session }
 }
 
 export const sair = () => supabase.auth.signOut()
@@ -753,35 +747,19 @@ export async function atualizarObra(id, c) {
   return codigoRepetido(umaLinha(await supabase.from('obras').update(colunasObra(c)).eq('id', id).select('id')))
 }
 
-// ----- Pessoas: perfil, situação da conta e obras liberadas (só o Coordenador; o gatilho do banco repete a regra) -----
-export async function atualizarPerfil(id, campos) {
-  return umaLinha(await supabase.from('profiles').update(campos).eq('id', id).select('id'))
-}
-// Deixa a pessoa com EXATAMENTE as obras escolhidas: liga as que faltam e desliga as que sobram.
-export async function definirObrasDoPerfil(profileId, obraIds) {
+// ----- Pessoas (painel de admin) -----
+// Criar login, trocar senha, mudar perfil e obras, bloquear e excluir passam TODOS pela Edge Function admin-usuarios: a chave de
+// serviço só existe lá, e a função confere no banco que quem chama é administrador ativo. Aqui só se pede e se traduz o erro.
+export async function adminUsuarios(acao, dados = {}) {
   try {
-    const atuais = await ler(supabase.from('obra_membros').select('*').eq('profile_id', profileId))
-    const faltam = obraIds.filter((id) => !atuais.some((m) => m.obra_id === id))
-    const sobram = atuais.filter((m) => !obraIds.includes(m.obra_id)).map((m) => m.id)
-    if (faltam.length) {
-      const { error } = await supabase.from('obra_membros').insert(faltam.map((obra_id) => ({ obra_id, profile_id: profileId })))
-      if (error) throw error
-    }
-    if (sobram.length) {
-      const { error } = await supabase.from('obra_membros').delete().in('id', sobram)
-      if (error) throw error
-    }
-    const depois = await ler(supabase.from('obra_membros').select('obra_id').eq('profile_id', profileId))
-    if (depois.length !== obraIds.length) return { data: null, erro: semPermissao() }
-    return { data: true, erro: null }
-  } catch (erro) {
-    return { data: null, erro }
+    const { data, error } = await supabase.functions.invoke('admin-usuarios', { body: { acao, ...dados } })
+    if (!error) return data?.erro ? { data: null, erro: bloqueioDeRegra(data.erro) } : { data, erro: null }
+    // A função responde com { erro: 'frase em português' } e um status de recusa (400/403/409...).
+    const corpo = await error.context?.json?.().catch(() => null)
+    return { data: null, erro: bloqueioDeRegra(corpo?.erro || 'Não consegui falar com o servidor. Tente de novo.') }
+  } catch (_) {
+    return { data: null, erro: bloqueioDeRegra('Não consegui falar com o servidor. Verifique a conexão e tente de novo.') }
   }
-}
-// Liberar uma conta nova: define o perfil e as obras. Se as obras falharem, o perfil já mudou e a tela avisa para tentar de novo.
-export async function liberarConta(profileId, role, obraIds) {
-  const perfil = await atualizarPerfil(profileId, { role })
-  return perfil.erro ? perfil : definirObrasDoPerfil(profileId, obraIds)
 }
 
 // RELATÓRIOS (BI da obra): só lê. Junta o que cada módulo já tem, sempre de UMA obra, pela mesma porta dos demais.
