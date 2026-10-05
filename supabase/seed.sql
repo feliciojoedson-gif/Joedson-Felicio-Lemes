@@ -27,3 +27,52 @@ from (values
 ) as v(obra, nome, disciplina, local, ini, fim, marco, real, ult, dias, status, saude, impacto, decisao)
 join public.obras o on o.codigo = v.obra
 where not exists (select 1 from public.frentes f where f.obra_id = o.id);
+
+-- Empreiteiros (exemplo): os mesmos contratos de src/lib/mockData.js. Só entra se a obra ainda não tem contrato.
+-- Roda como dono do banco; os boletins passam pelos gatilhos (numeração, 100%, valor por acumulado).
+do $s$
+declare
+  v_u bigint; v_t bigint; c bigint; i1 bigint; i2 bigint; i3 bigint;
+begin
+  select id into v_u from public.obras where codigo = 'U12';
+  select id into v_t from public.obras where codigo = 'T405';
+
+  if v_u is not null and not exists (select 1 from public.contratos_empreiteiro where obra_id = v_u) then
+    insert into public.contratos_empreiteiro (obra_id, empreiteiro, descricao, status, criado_em) values
+      (v_u, 'Tinturas & Cores Ltda', 'Pintura interna de todos os ambientes', 'elaboracao', '2026-10-02'),
+      (v_u, 'Volt Instalações Elétricas', 'Infraestrutura e quadros elétricos', 'enviado', '2026-09-25');
+
+    insert into public.contratos_empreiteiro (obra_id, empreiteiro, descricao, status, modo, valor_total, criado_em)
+      values (v_u, 'Gesso Forte Acabamentos', 'Forro e sancas de gesso', 'ativo', 'global', 30000, '2026-09-05') returning id into c;
+    insert into public.boletins_empreiteiro (obra_id, contrato_id, numero, data, valor) values
+      (v_u, c, 1, '2026-09-20', 9000), (v_u, c, 2, '2026-10-02', 3000);
+
+    -- escopo: os itens entram com o contrato em Enviado; só então ele é ativado (o gatilho confere a soma)
+    insert into public.contratos_empreiteiro (obra_id, empreiteiro, descricao, status, criado_em)
+      values (v_u, 'Drywall Sul Divisórias', 'Paredes e forros em drywall', 'enviado', '2026-09-01') returning id into c;
+    insert into public.itens_contrato (obra_id, contrato_id, descricao, unidade, quantidade, preco_unitario)
+      values (v_u, c, 'Placas de drywall', 'm2', 200, 80) returning id into i1;
+    insert into public.itens_contrato (obra_id, contrato_id, descricao, unidade, quantidade, preco_unitario)
+      values (v_u, c, 'Tratamento de juntas', 'm2', 200, 40) returning id into i2;
+    insert into public.itens_contrato (obra_id, contrato_id, descricao, unidade, quantidade, preco_unitario)
+      values (v_u, c, 'Tabica de fixação', 'm', 50, 120) returning id into i3;
+    update public.contratos_empreiteiro set status = 'ativo', modo = 'escopo', valor_total = 30000 where id = c;
+    insert into public.boletins_empreiteiro (obra_id, contrato_id, numero, data, valor, linhas) values
+      (v_u, c, 1, '2026-09-15', 8000, jsonb_build_array(jsonb_build_object('itemId', i1, 'quantidade', 80), jsonb_build_object('itemId', i2, 'quantidade', 40))),
+      (v_u, c, 2, '2026-09-29', 9600, jsonb_build_array(jsonb_build_object('itemId', i1, 'quantidade', 60), jsonb_build_object('itemId', i2, 'quantidade', 60), jsonb_build_object('itemId', i3, 'quantidade', 20)));
+
+    insert into public.contratos_empreiteiro (obra_id, empreiteiro, descricao, status, modo, valor_total, criado_em)
+      values (v_u, 'Demol Rápido Serviços', 'Demolição de alvenaria e retirada de entulho', 'ativo', 'global', 12000, '2026-08-20') returning id into c;
+    insert into public.boletins_empreiteiro (obra_id, contrato_id, numero, data, valor) values
+      (v_u, c, 1, '2026-09-02', 8000), (v_u, c, 2, '2026-09-18', 4000);
+    update public.contratos_empreiteiro set status = 'concluido' where id = c;
+  end if;
+
+  if v_t is not null and not exists (select 1 from public.contratos_empreiteiro where obra_id = v_t) then
+    insert into public.contratos_empreiteiro (obra_id, empreiteiro, descricao, status, modo, valor_total, criado_em)
+      values (v_t, 'Concreto Norte Fundações', 'Fundação do tanque T405', 'ativo', 'global', 50000, '2026-09-10') returning id into c;
+    insert into public.boletins_empreiteiro (obra_id, contrato_id, numero, data, valor) values (v_t, c, 1, '2026-09-30', 10000);
+    insert into public.contratos_empreiteiro (obra_id, empreiteiro, descricao, status, criado_em)
+      values (v_t, 'Pintura Industrial Aço Vivo', 'Pintura anticorrosiva da estrutura', 'elaboracao', '2026-10-01');
+  end if;
+end $s$;

@@ -9,6 +9,9 @@
     "fotos": ["id", "obra_id", "frente_id", "apontamento_id", "url", "legenda", "visivel_cliente", "autor_id", "tirada_em", "created_at"],
     "medicoes": ["id", "obra_id", "frente_id", "mes_referencia", "quantidade", "unidade", "percentual_medido", "valor_medido", "status", "evidencia_url", "observacao", "created_at"],
     "restricoes": ["id", "obra_id", "frente_id", "tipo", "titulo", "descricao", "criticidade", "status", "responsavel_id", "autor_id", "data_limite", "impacto_prazo_dias", "resolvida_em", "created_at"],
+    "contratos_empreiteiro": ["id", "obra_id", "empreiteiro", "descricao", "status", "modo", "valor_total", "criado_em", "created_at"],
+    "itens_contrato": ["id", "obra_id", "contrato_id", "descricao", "unidade", "quantidade", "preco_unitario", "created_at"],
+    "boletins_empreiteiro": ["id", "obra_id", "contrato_id", "numero", "data", "valor", "linhas", "created_at"],
     "auditoria": ["id", "obra_id", "tabela", "registro_id", "acao", "usuario_id", "perfil", "campo", "valor_anterior", "valor_novo", "justificativa", "created_at"]
   },
   "views": {
@@ -25,6 +28,9 @@
     "medicoes.status": ["Rascunho", "Enviada", "Aprovada pela Gestão", "Aprovada"],
     "restricoes.tipo": ["Restrição", "RFI", "Risco", "Pleito potencial"],
     "restricoes.criticidade": ["Alta", "Média", "Baixa"],
-    "restricoes.status": ["Aberta", "Em tratamento", "Resolvida"]
+    "restricoes.status": ["Aberta", "Em tratamento", "Resolvida"],
+    "contratos_empreiteiro.status": ["elaboracao", "enviado", "ativo", "concluido"],
+    "contratos_empreiteiro.modo": ["global", "escopo"],
+    "itens_contrato.unidade": ["m2", "m", "un", "vb"]
   }
 }

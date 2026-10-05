@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as regras from '../src/lib/regras.js'
+import { COLUNAS_CONTRATO, MODOS, UNIDADES } from '../src/lib/empreiteiros.js'
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..')
 const snap = JSON.parse(readFileSync(join(raiz, 'tests/schema-snapshot.json'), 'utf8'))
@@ -21,6 +22,8 @@ const gravacoes = [
   ['apontamentos', /const dados = \{([\s\S]*?)\n  \}/],
   ['apontamentos', /\.insert\(\{ \.\.\.dados, ([^}]*)\}\)/],
   ['fotos', /from\('fotos'\)\.insert\(\{([\s\S]*?)\}\)/],
+  ['contratos_empreiteiro', /from\('contratos_empreiteiro'\)\s*\.insert\(\{([\s\S]*?)\}\)/],
+  ['boletins_empreiteiro', /from\('boletins_empreiteiro'\)\s*\.insert\(\{([\s\S]*?)\}\)/],
 ]
 for (const [tabela, re] of gravacoes) {
   const bloco = dados.match(re)
@@ -40,6 +43,9 @@ const vocabulario = {
   'restricoes.tipo': regras.TIPOS_RESTRICAO,
   'restricoes.criticidade': regras.CRITICIDADES,
   'restricoes.status': regras.STATUS_RESTRICAO,
+  'contratos_empreiteiro.status': COLUNAS_CONTRATO.map((c) => c.id),
+  'contratos_empreiteiro.modo': Object.keys(MODOS),
+  'itens_contrato.unidade': UNIDADES,
 }
 for (const [chave, lista] of Object.entries(vocabulario)) {
   const banco = snap.checks[chave]
@@ -53,7 +59,7 @@ for (const chave of Object.keys(snap.checks)) {
 }
 
 // 4) Toda tabela de lançamento tem obra_id (app multi-obra).
-for (const t of ['frentes', 'apontamentos', 'fotos', 'medicoes', 'restricoes']) {
+for (const t of ['frentes', 'apontamentos', 'fotos', 'medicoes', 'restricoes', 'contratos_empreiteiro', 'itens_contrato', 'boletins_empreiteiro']) {
   if (!snap.tabelas[t].includes('obra_id')) erros.push(`${t} sem obra_id no snapshot`)
 }
 

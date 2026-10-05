@@ -5,11 +5,7 @@
 // APP MULTI-OBRA: tudo que é lançamento (frentes, diário, fotos, medições, restrições)
 // sai daqui já recortado por UMA obra. Nenhuma tela recebe dado de duas obras juntas.
 import { supabase } from './supabase.js'
-import {
-  contratos as contratosDeExemplo, diarios as diariosDeExemplo, itensContrato as itensDeExemplo, materiaisCatalogo,
-  medicoes as medicoesDeExemplo, pedidos as pedidosDeExemplo, planejamentoDeExemplo,
-} from './mockData.js'
-import { aplicarMovimentoContrato, novaMedicao, novoContrato, verificarBoletim, verificarMovimento } from './empreiteiros.js'
+import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, planejamentoDeExemplo } from './mockData.js'
 import {
   aplicarAtividade, aplicarRestricao, arquivarAtividade, calendarioPadrao, reprogramarRestricao, resolverRestricao,
   restricoesDaImportacao, baselineDaImportacao, criarBaseline,
@@ -195,64 +191,88 @@ export async function moverPedido(obra, id, status, dados, hoje) {
   return { data: { ...pedidosEmMemoria[i] }, erro: null }
 }
 
-// Medições de empreiteiros (contratos, itens do escopo e boletins): em memória, como Materiais. Sempre de UMA obra.
-// ponytail: trocar pelo Supabase (contratos com obra_id; itens e boletins ligados ao contrato; RLS por obra).
-const contratosEmMemoria = contratosDeExemplo.map((c) => ({ ...c }))
-const itensEmMemoria = itensDeExemplo.map((i) => ({ ...i }))
-const medicoesEmMemoria = medicoesDeExemplo.map((m) => ({ ...m, linhas: m.linhas.map((l) => ({ ...l })) }))
-const proximoId = (lista) => Math.max(0, ...lista.map((x) => x.id)) + 1
+// Medições de empreiteiros: contratos, itens do escopo e boletins, sempre de UMA obra (obra_id + RLS por obra).
+// As regras de dinheiro (100%, numeração, ordem das colunas) são conferidas aqui E nos gatilhos do banco;
+// o banco escreve as recusas em português (código P0001) e a tela mostra o texto como veio.
+const bloqueioDeRegra = (texto) => Object.assign(new Error(texto), { regra: true })
+const deErroDoBanco = (error) => (error.code === 'P0001' ? bloqueioDeRegra(error.message) : error)
 
-// Devolve contratos da obra + os itens e boletins deles (nunca de outra obra).
+const doContrato = (r) => ({
+  id: r.id, obraId: r.obra_id, empreiteiro: r.empreiteiro, descricao: r.descricao, status: r.status,
+  modo: r.modo, valorTotal: r.valor_total === null ? null : Number(r.valor_total), criadoEm: r.criado_em,
+})
+const doItem = (r) => ({
+  id: r.id, contratoId: r.contrato_id, descricao: r.descricao, unidade: r.unidade,
+  quantidade: Number(r.quantidade), precoUnitario: Number(r.preco_unitario),
+})
+const doBoletim = (r) => ({
+  id: r.id, contratoId: r.contrato_id, numero: r.numero, data: r.data, valor: Number(r.valor),
+  linhas: r.linhas.map((l) => ({ itemId: l.itemId, quantidade: Number(l.quantidade) })),
+})
+
+// O Supabase devolve no máximo 1000 linhas por consulta e não avisa quando corta: lê em páginas até acabar.
+// (Boletim cortado em silêncio distorceria o % medido.) `consulta()` monta a consulta de novo a cada página.
+async function lerTudo(consulta) {
+  const POR_PAGINA = 1000
+  const tudo = []
+  for (let de = 0; ; de += POR_PAGINA) {
+    const pagina = await ler(consulta().range(de, de + POR_PAGINA - 1))
+    tudo.push(...pagina)
+    if (pagina.length < POR_PAGINA) return tudo
+  }
+}
+
+// Devolve contratos da obra + os itens e boletins deles.
 export async function listarContratos(obra) {
-  const contratos = contratosEmMemoria.filter((c) => c.obraCodigo === obra.codigo)
-  const ids = new Set(contratos.map((c) => c.id))
-  return {
-    data: {
-      contratos: contratos.map((c) => ({ ...c })),
-      itens: itensEmMemoria.filter((i) => ids.has(i.contratoId)).map((i) => ({ ...i })),
-      medicoes: medicoesEmMemoria.filter((m) => ids.has(m.contratoId)).map((m) => ({ ...m, linhas: m.linhas.map((l) => ({ ...l })) })),
-    },
-    erro: null,
+  try {
+    const [contratos, itens, boletins] = await Promise.all([
+      lerTudo(() => supabase.from('contratos_empreiteiro').select('*').eq('obra_id', obra.id).order('id')),
+      lerTudo(() => supabase.from('itens_contrato').select('*').eq('obra_id', obra.id).order('id')),
+      lerTudo(() => supabase.from('boletins_empreiteiro').select('*').eq('obra_id', obra.id).order('id')),
+    ])
+    return { data: { contratos: contratos.map(doContrato), itens: itens.map(doItem), medicoes: boletins.map(doBoletim) }, erro: null }
+  } catch (erro) {
+    return { data: null, erro }
   }
 }
 
+// `hoje` vem do app (fuso de Brasília): o `current_date` do banco é UTC e viraria o dia seguinte depois das 21h.
 export async function criarContrato(obra, campos, hoje) {
-  const contrato = novoContrato({ ...campos, id: proximoId(contratosEmMemoria), obraCodigo: obra.codigo }, hoje)
-  contratosEmMemoria.push(contrato)
-  return { data: { ...contrato }, erro: null }
+  const { data, error } = await supabase.from('contratos_empreiteiro')
+    .insert({ obra_id: obra.id, empreiteiro: campos.empreiteiro.trim(), descricao: campos.descricao.trim(), criado_em: hoje })
+    .select('*').single()
+  return error ? { data: null, erro: deErroDoBanco(error) } : { data: doContrato(data), erro: null }
 }
 
-// Move uma coluna. Ao ativar, `cadastro` ({ modo, valorTotal, itens }) grava o valor; no escopo, troca os itens do contrato.
-// As regras (100% medido, medição lançada) são reconferidas aqui: a tela já avisou, mas a camada não confia nela.
+// Move uma coluna. Ao ativar, `cadastro` ({ modo, valorTotal, itens }) vai por uma função do banco que troca os itens,
+// grava o valor e muda o status numa transação só (ou tudo, ou nada).
 export async function moverContrato(obra, id, status, cadastro) {
-  const i = contratosEmMemoria.findIndex((c) => c.id === id && c.obraCodigo === obra.codigo)
-  if (i < 0) return { data: null, erro: new Error('contrato não encontrado') }
-  const atual = contratosEmMemoria[i]
-  const bloqueio = verificarMovimento(atual, status, medicoesEmMemoria)
-  if (bloqueio) return { data: null, erro: new Error(bloqueio) }
-  if (status === 'ativo' && !cadastro && !atual.modo) return { data: null, erro: new Error('cadastre o valor antes de ativar') }
-  contratosEmMemoria[i] = aplicarMovimentoContrato(atual, status, cadastro)
-  let itens = itensEmMemoria.filter((x) => x.contratoId === id)
-  if (cadastro) {
-    for (let k = itensEmMemoria.length - 1; k >= 0; k--) if (itensEmMemoria[k].contratoId === id) itensEmMemoria.splice(k, 1)
-    if (cadastro.modo === 'escopo') {
-      cadastro.itens.forEach((item) => itensEmMemoria.push({ ...item, id: proximoId(itensEmMemoria), contratoId: id }))
-    }
-    itens = itensEmMemoria.filter((x) => x.contratoId === id)
+  // A função de ativação não recebe a obra: confere aqui que o contrato é DESTA obra antes de mexer nele.
+  const { data: doDestaObra, error: erroConferencia } = await supabase.from('contratos_empreiteiro').select('id').eq('id', id).eq('obra_id', obra.id)
+  if (erroConferencia || !doDestaObra?.length) return { data: null, erro: erroConferencia || new Error('contrato não encontrado nesta obra') }
+  const { error } = cadastro
+    ? await supabase.rpc('ativar_contrato_empreiteiro', { p_contrato: id, p_modo: cadastro.modo, p_valor: cadastro.valorTotal, p_itens: cadastro.itens })
+    : await supabase.from('contratos_empreiteiro').update({ status }).eq('id', id).eq('obra_id', obra.id)
+  if (error) return { data: null, erro: deErroDoBanco(error) }
+  try {
+    const [contrato, itens] = await Promise.all([
+      ler(supabase.from('contratos_empreiteiro').select('*').eq('id', id).eq('obra_id', obra.id).single()),
+      ler(supabase.from('itens_contrato').select('*').eq('contrato_id', id).order('id')),
+    ])
+    // Sem permissão o UPDATE não dá erro: só não muda nada. Conferir o status evita um "movido" falso.
+    if (contrato.status !== status) return { data: null, erro: new Error('sem permissão para mover o contrato') }
+    return { data: { contrato: doContrato(contrato), itens: itens.map(doItem) }, erro: null }
+  } catch (erro) {
+    return { data: null, erro }
   }
-  return { data: { contrato: { ...contratosEmMemoria[i] }, itens: itens.map((x) => ({ ...x })) }, erro: null }
 }
 
-// Lança um boletim. A numeração e o bloqueio de 100% são decididos aqui, não na tela.
+// Lança um boletim. O número é do banco (o 1 abaixo só preenche a coluna obrigatória) e o banco recusa passar de 100%.
 export async function criarMedicao(obra, contratoId, boletim) {
-  const contrato = contratosEmMemoria.find((c) => c.id === contratoId && c.obraCodigo === obra.codigo)
-  if (!contrato) return { data: null, erro: new Error('contrato não encontrado') }
-  const itens = itensEmMemoria.filter((i) => i.contratoId === contratoId)
-  const bloqueio = verificarBoletim(contrato, itens, medicoesEmMemoria, boletim)
-  if (bloqueio) return { data: null, erro: new Error(bloqueio) }
-  const medicao = novaMedicao(contrato, medicoesEmMemoria, proximoId(medicoesEmMemoria), boletim)
-  medicoesEmMemoria.push(medicao)
-  return { data: { ...medicao, linhas: medicao.linhas.map((l) => ({ ...l })) }, erro: null }
+  const { data, error } = await supabase.from('boletins_empreiteiro')
+    .insert({ obra_id: obra.id, contrato_id: contratoId, numero: 1, data: boletim.data, valor: boletim.valor, linhas: boletim.linhas })
+    .select('*').single()
+  return error ? { data: null, erro: deErroDoBanco(error) } : { data: doBoletim(data), erro: null }
 }
 
 // PLANEJAMENTO (Last Planner): também em memória. Uma lista de atividades por obra, compartilhada por todas as abas

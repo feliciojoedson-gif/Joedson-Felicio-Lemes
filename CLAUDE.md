@@ -81,11 +81,12 @@ Quatro abas (EAP, Longo, Médio, Curto) em `src/screens/planejamento/`, **todas 
 
 ## Módulo Empreiteiros (contratos e fichas de medição)
 
-Rota `empreiteiros` (`src/screens/empreiteiros.jsx` + `empreiteiros/{valor,ficha,ui}.jsx`). Não confundir com `medicoes`, que é a medição das **frentes**. Kanban Elaboração → Enviado → Ativo → Concluído; ativar abre o cadastro do valor (global ou por escopo); só contrato Ativo recebe boletim.
-- Regras puras em `src/lib/empreiteiros.js`, testes em `tests/empreiteiros.mjs`. A **quantidade é a fonte da verdade** do escopo: % e R$ são derivados dela. Dinheiro sempre somado em centavos.
-- Bloqueios (100% medido para concluir, nenhum item passa de 100%) são reconferidos em `dados.js`, não só na tela.
-- Perfis que criam/movem/medem: Coordenador, Planejamento, Medição (`gerirEmpreiteiros`); os demais só consultam.
-- **Ainda sem banco:** dados em memória em `dados.js` (`ponytail:`), exemplo em `mockData.js` (`contratos`, `itensContrato`, `medicoes`). Banco: contratos com `obra_id`, itens e boletins ligados ao contrato, RLS por obra.
+Mora na tela **Medições**, aba "Empreiteiros" (`src/screens/empreiteiros.jsx` + `empreiteiros/{valor,ficha,ui}.jsx`, embutida em `medicoes.jsx`). A aba "A medir"/"Histórico" é a medição das **frentes**: não confundir. Kanban Elaboração → Enviado → Ativo → Concluído; ativar abre o cadastro do valor (global ou por escopo); só contrato Ativo recebe boletim.
+- Regras puras em `src/lib/empreiteiros.js`, testes em `tests/empreiteiros.mjs`. A **quantidade é a fonte da verdade** do escopo: % e R$ são derivados dela; o valor de cada execução é (acumulado novo − acumulado anterior), cada um arredondado uma vez, para os boletins somarem exatamente o total do item. Dinheiro sempre somado em centavos.
+- **Com banco** (Supabase): `contratos_empreiteiro`, `itens_contrato`, `boletins_empreiteiro` (todas com `obra_id` e RLS por obra). Migrations `20261004200000_empreiteiros.sql`, `..200100_empreiteiros_ativacao.sql` e `..200200_empreiteiros_integridade.sql` (o escopo só muda com o contrato em Elaboração/Enviado; ativo por escopo sempre soma os itens); teste de RLS e regras em `supabase/tests/empreiteiros.sql`; exemplo no `seed.sql`.
+- As regras de dinheiro valem **no banco também** (gatilhos): concluir só com 100% medido, nenhum item passa de 100%, o banco numera o boletim, ordem das colunas. Boletim é imutável (sem UPDATE/DELETE). Ativar o contrato é a função `ativar_contrato_empreiteiro` (itens + valor + status numa transação). O banco escreve a recusa em português (P0001) e a tela mostra o texto (`erro.regra`).
+- Perfis que criam/movem/medem: Coordenador, Planejamento, Medição (`gerirEmpreiteiros` e a RLS); os demais só consultam. Mudou permissão: mude a policy, `regras.js` e o teste SQL no mesmo lote.
+- `mockData.js` (`contratos`, `itensContrato`, `medicoes`) virou massa de teste de `tests/empreiteiros.mjs`: nenhuma tela o importa.
 
 ## Armadilhas desta base
 

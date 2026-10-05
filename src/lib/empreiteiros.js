@@ -12,23 +12,21 @@ export const UNIDADES = ['m2', 'm', 'un', 'vb']
 export const MODOS = { global: 'Contrato global', escopo: 'Contrato por escopo' }
 
 const posicao = (id) => COLUNAS_CONTRATO.findIndex((c) => c.id === id)
-export const colunaDepois = (id) => COLUNAS_CONTRATO[posicao(id) + 1] || null
-export const colunaAntes = (id) => COLUNAS_CONTRATO[posicao(id) - 1] || null
+export const colunaContratoDepois = (id) => COLUNAS_CONTRATO[posicao(id) + 1] || null
+export const colunaContratoAntes = (id) => COLUNAS_CONTRATO[posicao(id) - 1] || null
 
 // ---------- Dinheiro e medido ----------
 
-const centavos = (n) => Math.round(Number(n) * 100)
+// O 1e-9 evita o erro de ponto flutuante nos empates de meio centavo (2,675 x 100 = 267,4999...): arredonda como o Postgres.
+const centavos = (n) => Math.round(Number(n) * 100 + 1e-9)
 const numeroOuZero = (texto) => {
   const n = lerQuantidade(texto)
   return Number.isFinite(n) ? n : 0
 }
 
-export const valorDoItem = (item) => centavos(item.quantidade * item.precoUnitario) / 100
-export const totalDosItens = (itens) => itens.reduce((soma, i) => soma + centavos(i.quantidade * i.precoUnitario), 0) / 100
-
 // Linha do formulário (campos em texto) -> total da linha; texto inválido conta zero.
 export const valorDaLinha = (linha) => centavos(numeroOuZero(linha.quantidade) * numeroOuZero(linha.precoUnitario)) / 100
-export const totalDasLinhas = (linhas) => linhas.reduce((soma, l) => soma + centavos(valorDaLinha(l)), 0) / 100
+const totalDasLinhas = (linhas) => linhas.reduce((soma, l) => soma + centavos(valorDaLinha(l)), 0) / 100
 
 // Valor total que o cadastro vai gravar no contrato.
 export const valorDoCadastro = ({ modo, valorGlobal, itens }) =>
@@ -46,6 +44,9 @@ export function percentualMedido(contrato, medicoes) {
   return (centavos(medidoDoContrato(contrato, medicoes)) / total) * 100
 }
 
+export const percentualAMedir = (contrato, medicoes) => Math.max(0, 100 - percentualMedido(contrato, medicoes))
+export const acumuladoDepois = (contrato, medicoes, valor) => (centavos(medidoDoContrato(contrato, medicoes)) + centavos(valor)) / 100
+
 export const estaTotalmenteMedido = (contrato, medicoes) =>
   centavos(contrato.valorTotal || 0) > 0 && centavos(medidoDoContrato(contrato, medicoes)) >= centavos(contrato.valorTotal)
 
@@ -53,11 +54,15 @@ export const rotuloPercentual = (n) => `${Number(n).toLocaleString('pt-BR', { ma
 
 // Só contrato "Aprovado / Ativo" recebe medição.
 export const recebeMedicao = (contrato) => contrato.status === 'ativo'
+// A barra de % medido só faz sentido depois da ativação.
+export const mostraMedido = (contrato) => ['ativo', 'concluido'].includes(contrato.status)
+// Ativar (Enviado -> Ativo) é o único movimento que pede o cadastro do valor.
+export const pedeCadastroDoValor = (contrato, para) => contrato.status === 'enviado' && para === 'ativo'
 
 // ---------- Contrato novo e movimento ----------
 
-export const novoContrato = ({ id, obraCodigo, empreiteiro, descricao }, hoje) => ({
-  id, obraCodigo, empreiteiro: empreiteiro.trim(), descricao: descricao.trim(),
+export const novoContrato = ({ id, obraId, empreiteiro, descricao }, hoje) => ({
+  id, obraId, empreiteiro: empreiteiro.trim(), descricao: descricao.trim(),
   status: 'elaboracao', modo: null, valorTotal: null, criadoEm: hoje,
 })
 
@@ -153,13 +158,20 @@ export function valorDaEntradaGlobal(entrada, contrato) {
 export const pctDoValor = (valor, contrato) => (contrato.valorTotal ? (valor / contrato.valorTotal) * 100 : 0)
 
 // Entradas do formulário -> boletim numérico. Escopo: uma linha por item com execução; global: só o valor.
-export function boletimDasEntradas(contrato, itens, entradas, data) {
+export function boletimDasEntradas(contrato, itens, entradas, data, medicoes) {
   if (contrato.modo === 'global') return { data, valor: valorDaEntradaGlobal(entradas.global, contrato), linhas: [] }
   const linhas = itens
     .map((item) => ({ itemId: item.id, quantidade: quantidadeDaEntrada(entradas[item.id], item) }))
     .filter((l) => l.quantidade > 0)
-  const valor = linhas.reduce((soma, l) => soma + centavos(l.quantidade * itens.find((i) => i.id === l.itemId).precoUnitario), 0) / 100
+  const valor = linhas.reduce((soma, l) => soma + centavos(valorDaQuantidade(itens.find((i) => i.id === l.itemId), medicoes, l.quantidade)), 0) / 100
   return { data, valor, linhas }
+}
+
+// Valor de uma execução = valor do acumulado novo menos o do acumulado anterior, cada um arredondado UMA vez:
+// assim os boletins somam exatamente o total do item, sem sobra nem falta de centavo.
+export function valorDaQuantidade(item, medicoes, quantidade) {
+  const antes = acumuladoDoItem(item.id, medicoes)
+  return (centavos((antes + quantidade) * item.precoUnitario) - centavos(antes * item.precoUnitario)) / 100
 }
 
 // Nenhum item (nem o global) passa de 100% acumulado. Devolve { global?: texto, [itemId]: texto }.
@@ -181,19 +193,12 @@ function excessos(contrato, itens, medicoes, boletim) {
   return achados
 }
 
-// Reconferência na camada de dados (boletim já numérico): texto do bloqueio ou null.
-export function verificarBoletim(contrato, itens, medicoes, boletim) {
-  if (!recebeMedicao(contrato)) return 'Só contrato Aprovado / Ativo recebe medição.'
-  if (!(boletim.valor > 0)) return 'O boletim não tem nenhum valor medido.'
-  return Object.values(excessos(contrato, itens, medicoes, boletim))[0] || null
-}
-
 // Erros por campo do formulário. Chaves: `data`, `global`, `itens` e `i<itemId>`.
 export function errosBoletim({ contrato, itens, medicoes, entradas, data }, hoje) {
   const erros = {}
   if (!data) erros.data = 'Informe a data da medição.'
   else if (data > hoje) erros.data = 'A data não pode ser futura.'
-  const boletim = boletimDasEntradas(contrato, itens, entradas, data)
+  const boletim = boletimDasEntradas(contrato, itens, entradas, data, medicoes)
   const achados = excessos(contrato, itens, medicoes, boletim)
   if (contrato.modo === 'global') {
     if (achados.global) erros.global = achados.global

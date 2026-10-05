@@ -16,16 +16,16 @@ export const STATUS_RESTRICAO = ['Aberta', 'Em tratamento', 'Resolvida']
 // ---------- Menus e permissões ----------
 
 export const MENUS = {
-  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'empreiteiros', 'restricoes', 'materiais', 'planejamento', 'rdo', 'admin', 'perfil'],
-  Planejamento: ['painel', 'frentes', 'planejamento', 'medicoes', 'empreiteiros', 'materiais', 'perfil'],
+  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'rdo', 'admin', 'perfil'],
+  Planejamento: ['painel', 'frentes', 'planejamento', 'medicoes', 'materiais', 'perfil'],
   Engenharia: ['restricoes', 'frentes', 'perfil'],
   Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'materiais', 'planejamento', 'perfil'],
-  Medição: ['medicoes', 'empreiteiros', 'frentes', 'perfil'],
-  'Custos e Controle': ['painel', 'medicoes', 'empreiteiros', 'perfil'],
-  'Gestão Contratual': ['restricoes', 'medicoes', 'empreiteiros', 'frentes', 'perfil'],
+  Medição: ['medicoes', 'frentes', 'perfil'],
+  'Custos e Controle': ['painel', 'medicoes', 'perfil'],
+  'Gestão Contratual': ['restricoes', 'medicoes', 'frentes', 'perfil'],
   Cliente: ['painel', 'fotos', 'perfil'],
-  Diretoria: ['painel', 'medicoes', 'empreiteiros', 'restricoes', 'perfil'],
-  Administrador: ['painel', 'medicoes', 'empreiteiros', 'restricoes', 'admin', 'perfil'],
+  Diretoria: ['painel', 'medicoes', 'restricoes', 'perfil'],
+  Administrador: ['painel', 'medicoes', 'restricoes', 'admin', 'perfil'],
 }
 
 export const ROTULOS = {
@@ -34,7 +34,6 @@ export const ROTULOS = {
   diario: 'Diário',
   rdo: 'Diário de Obra',
   medicoes: 'Medições',
-  empreiteiros: 'Empreiteiros',
   restricoes: 'Restrições',
   materiais: 'Materiais',
   planejamento: 'Planejamento',

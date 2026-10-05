@@ -1,9 +1,9 @@
 // Regras do módulo Empreiteiros (src/lib/empreiteiros.js). Node puro: `node tests/empreiteiros.mjs`.
 import {
-  acumuladoDoItem, aplicarMovimentoContrato, boletimDasEntradas, colunaAntes, colunaDepois, errosBoletim, errosContrato, errosValor,
+  acumuladoDoItem, aplicarMovimentoContrato, boletimDasEntradas, colunaContratoAntes, colunaContratoDepois, errosBoletim, errosContrato, errosValor,
   estaTotalmenteMedido, itensDoCadastro, medidoDoContrato, novaLinha, novaMedicao, novoContrato, percentualMedido, proximoNumero,
-  quantidadeDaEntrada, recebeMedicao, saldoDoContrato, saldoDoItem, totalDosItens, valorDaEntradaGlobal, valorDoCadastro, valorDoItem,
-  verificarBoletim, verificarMovimento,
+  quantidadeDaEntrada, recebeMedicao, saldoDoContrato, saldoDoItem, valorDaEntradaGlobal, valorDaQuantidade, valorDoCadastro,
+  pedeCadastroDoValor, mostraMedido, percentualAMedir, acumuladoDepois, verificarMovimento,
 } from '../src/lib/empreiteiros.js'
 import { contratos, itensContrato, medicoes } from '../src/lib/mockData.js'
 
@@ -19,6 +19,8 @@ function conferir(descricao, real, esperado) {
   }
 }
 
+const valorDoItem = (item) => Math.round(item.quantidade * item.precoUnitario * 100 + 1e-9) / 100
+const totalDosItens = (itens) => itens.reduce((soma, i) => soma + Math.round(valorDoItem(i) * 100), 0) / 100
 const contrato = (id) => contratos.find((c) => c.id === id)
 const GESSO = contrato(3)
 const DRYWALL = contrato(4)
@@ -46,9 +48,9 @@ conferir('Gesso não está 100%', estaTotalmenteMedido(GESSO, medicoes), false)
 conferir('centavos não acumulam erro', totalDosItens([{ quantidade: 0.1, precoUnitario: 3 }, { quantidade: 0.2, precoUnitario: 3 }]), 0.9)
 
 // Colunas
-conferir('depois de elaboração vem enviado', colunaDepois('elaboracao').id, 'enviado')
-conferir('concluído não tem próxima', colunaDepois('concluido'), null)
-conferir('elaboração não tem anterior', colunaAntes('elaboracao'), null)
+conferir('depois de elaboração vem enviado', colunaContratoDepois('elaboracao').id, 'enviado')
+conferir('concluído não tem próxima', colunaContratoDepois('concluido'), null)
+conferir('elaboração não tem anterior', colunaContratoAntes('elaboracao'), null)
 conferir('só ativo recebe medição', [1, 2, 3, 4, 5].map((id) => recebeMedicao(contrato(id))), [false, false, true, true, false])
 
 // Regras de movimento
@@ -64,8 +66,8 @@ conferir('ativar grava modo e valor', [ativado.status, ativado.modo, ativado.val
 conferir('mover sem cadastro preserva o valor', aplicarMovimentoContrato(GESSO, 'concluido').valorTotal, 30000)
 
 // Contrato novo
-conferir('nasce em elaboração, sem valor', (({ status, modo, valorTotal, criadoEm }) => ({ status, modo, valorTotal, criadoEm }))(novoContrato({ id: 8, obraCodigo: 'U12', empreiteiro: ' Ana ', descricao: ' Pintura ' }, '2026-10-04')), { status: 'elaboracao', modo: null, valorTotal: null, criadoEm: '2026-10-04' })
-conferir('nome é aparado', novoContrato({ id: 8, obraCodigo: 'U12', empreiteiro: ' Ana ', descricao: ' Pintura ' }, '2026-10-04').empreiteiro, 'Ana')
+conferir('nasce em elaboração, sem valor', (({ status, modo, valorTotal, criadoEm }) => ({ status, modo, valorTotal, criadoEm }))(novoContrato({ id: 8, obraId: 1, empreiteiro: ' Ana ', descricao: ' Pintura ' }, '2026-10-04')), { status: 'elaboracao', modo: null, valorTotal: null, criadoEm: '2026-10-04' })
+conferir('nome é aparado', novoContrato({ id: 8, obraId: 1, empreiteiro: ' Ana ', descricao: ' Pintura ' }, '2026-10-04').empreiteiro, 'Ana')
 conferir('campos obrigatórios', Object.keys(errosContrato({ empreiteiro: ' ', descricao: '' })), ['empreiteiro', 'descricao'])
 conferir('contrato válido', errosContrato({ empreiteiro: 'Ana', descricao: 'Pintura' }), {})
 
@@ -100,20 +102,18 @@ conferir('digitou quantidade', quantidadeDaEntrada({ campo: 'quantidade', texto:
 conferir('digitou % (25% de 200 m2)', quantidadeDaEntrada({ campo: 'pct', texto: '25' }, placas), 50)
 conferir('digitou R$ (4.000 / 80)', quantidadeDaEntrada({ campo: 'valor', texto: '4000' }, placas), 50)
 conferir('campo vazio = 0', quantidadeDaEntrada({ campo: 'pct', texto: '' }, placas), 0)
-conferir('R$ digitado volta ao mesmo R$ (sem erro de arredondamento)', boletimDasEntradas(DRYWALL, itensDrywall, { 3: { campo: 'valor', texto: '100' } }, HOJE).valor, 100)
-conferir('R$ que não divide certo continua exato', boletimDasEntradas(DRYWALL, itensDrywall, { 3: { campo: 'valor', texto: '100' } }, HOJE).linhas[0].quantidade, 0.833333)
+conferir('R$ digitado volta ao mesmo R$ (sem erro de arredondamento)', boletimDasEntradas(DRYWALL, itensDrywall, { 3: { campo: 'valor', texto: '100' } }, HOJE, medicoes).valor, 100)
+conferir('R$ que não divide certo continua exato', boletimDasEntradas(DRYWALL, itensDrywall, { 3: { campo: 'valor', texto: '100' } }, HOJE, medicoes).linhas[0].quantidade, 0.833333)
 
 // boletim do escopo
 const entradas = { 1: { campo: 'quantidade', texto: '30' }, 3: { campo: 'pct', texto: '20' } }
-const boletim = boletimDasEntradas(DRYWALL, itensDrywall, entradas, HOJE)
+const boletim = boletimDasEntradas(DRYWALL, itensDrywall, entradas, HOJE, medicoes)
 conferir('só entram itens com execução', boletim.linhas, [{ itemId: 1, quantidade: 30 }, { itemId: 3, quantidade: 10 }])
 conferir('valor = soma de quantidade x preço', boletim.valor, 3600)
 conferir('boletim válido não tem erro', errosBoletim({ contrato: DRYWALL, itens: itensDrywall, medicoes, entradas, data: HOJE }, HOJE), {})
-conferir('verificarBoletim aceita', verificarBoletim(DRYWALL, itensDrywall, medicoes, boletim), null)
 conferir('saldo exato (60 m2) passa', errosBoletim({ contrato: DRYWALL, itens: itensDrywall, medicoes, entradas: { 1: { campo: 'quantidade', texto: '60' } }, data: HOJE }, HOJE), {})
 conferir('passar de 100% no item é barrado', Object.keys(errosBoletim({ contrato: DRYWALL, itens: itensDrywall, medicoes, entradas: { 1: { campo: 'quantidade', texto: '60,01' } }, data: HOJE }, HOJE)), ['i1'])
 conferir('o aviso diz o saldo', errosBoletim({ contrato: DRYWALL, itens: itensDrywall, medicoes, entradas: { 1: { campo: 'pct', texto: '40' } }, data: HOJE }, HOJE).i1, 'Passa de 100%: o saldo deste item é 60 m2.')
-conferir('a camada de dados também barra', typeof verificarBoletim(DRYWALL, itensDrywall, medicoes, { data: HOJE, valor: 1, linhas: [{ itemId: 2, quantidade: 101 }] }), 'string')
 conferir('boletim vazio é barrado', Object.keys(errosBoletim({ contrato: DRYWALL, itens: itensDrywall, medicoes, entradas: {}, data: HOJE }, HOJE)), ['itens'])
 conferir('data futura é barrada', Object.keys(errosBoletim({ contrato: DRYWALL, itens: itensDrywall, medicoes, entradas, data: '2026-10-05' }, HOJE)), ['data'])
 conferir('sem data é barrado', Object.keys(errosBoletim({ contrato: DRYWALL, itens: itensDrywall, medicoes, entradas, data: '' }, HOJE)), ['data'])
@@ -127,14 +127,33 @@ conferir('global: 60% = o saldo exato passa', errosBoletim(globalOk, HOJE), {})
 conferir('global: 60,1% passa de 100%', Object.keys(errosBoletim({ ...globalOk, entradas: { global: { campo: 'pct', texto: '60,1' } } }, HOJE)), ['global'])
 conferir('global: R$ acima do saldo é barrado', Object.keys(errosBoletim({ ...globalOk, entradas: { global: { campo: 'valor', texto: '18000,01' } } }, HOJE)), ['global'])
 conferir('global: sem valor é barrado', Object.keys(errosBoletim({ ...globalOk, entradas: {} }, HOJE)), ['global'])
-conferir('global: verificarBoletim barra o excesso', typeof verificarBoletim(GESSO, [], medicoes, { data: HOJE, valor: 18001, linhas: [] }), 'string')
-conferir('só contrato ativo recebe boletim', verificarBoletim(DEMOLICAO, [], medicoes, { data: HOJE, valor: 1, linhas: [] }), 'Só contrato Aprovado / Ativo recebe medição.')
 
 // depois de salvar: acumulado e saldo na hora
 const depois = [...medicoes, novaMedicao(GESSO, medicoes, 99, { data: HOJE, valor: 3000, linhas: [] })]
 conferir('acumulado depois do boletim', medidoDoContrato(GESSO, depois), 15000)
 conferir('saldo depois do boletim', saldoDoContrato(GESSO, depois), 15000)
 conferir('50% depois do boletim', percentualMedido(GESSO, depois), 50)
+
+// arredondamento: os boletins somam EXATAMENTE o total do item (0,5 x R$ 0,05 não vira R$ 0,03 duas vezes)
+const itemFino = { id: 50, contratoId: 50, descricao: 'Parafuso', unidade: 'un', quantidade: 1, precoUnitario: 0.05 }
+const metade = [{ id: 1, contratoId: 50, numero: 1, data: HOJE, valor: 0.03, linhas: [{ itemId: 50, quantidade: 0.5 }] }]
+conferir('1a metade de R$ 0,05 = R$ 0,03', valorDaQuantidade(itemFino, [], 0.5), 0.03)
+conferir('2a metade completa exatamente R$ 0,05', valorDaQuantidade(itemFino, metade, 0.5), 0.02)
+const terco = { ...itemFino, quantidade: 3, precoUnitario: 3.33 }
+const passo = (antes, q) => valorDaQuantidade(terco, antes, q)
+const m1 = [{ contratoId: 50, numero: 1, valor: passo([], 1), linhas: [{ itemId: 50, quantidade: 1 }] }]
+const m2 = [...m1, { contratoId: 50, numero: 2, valor: passo(m1, 1), linhas: [{ itemId: 50, quantidade: 1 }] }]
+conferir('3 boletins de 1/3 somam o total do item', Math.round((passo([], 1) + passo(m1, 1) + passo(m2, 1)) * 100) / 100, 9.99)
+
+
+conferir('só contrato ativo recebe boletim', [1, 2, 3, 4, 5].map((id) => recebeMedicao(contrato(id))), [false, false, true, true, false])
+conferir('meio centavo arredonda para cima (0,5 x R$ 5,35 = R$ 2,68)', valorDaQuantidade({ id: 60, precoUnitario: 5.35 }, [], 0.5), 2.68)
+
+// regras que a tela pergunta à lib
+conferir('só Enviado -> Ativo pede o valor', [pedeCadastroDoValor(contrato(2), 'ativo'), pedeCadastroDoValor(contrato(5), 'ativo'), pedeCadastroDoValor(contrato(1), 'enviado')], [true, false, false])
+conferir('barra de medido só em Ativo e Concluído', [1, 2, 3, 5].map((id) => mostraMedido(contrato(id))), [false, false, true, true])
+conferir('% a medir do Gesso', percentualAMedir(GESSO, medicoes), 60)
+conferir('acumulado depois em centavos', acumuladoDepois(GESSO, medicoes, 0.1), 12000.1)
 
 console.log(`${ok}/${tot} conferências de empreiteiros passaram.`)
 process.exit(ok === tot ? 0 : 1)

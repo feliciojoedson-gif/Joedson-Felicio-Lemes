@@ -117,7 +117,7 @@ conferir('caminho começa pela obra (a política do banco lê a primeira pasta)'
 conferir('legenda traz frente e data', legendaDaFoto({ nome: 'Montagem do fundo' }, '2026-10-04'), 'Montagem do fundo · 04/10/2026')
 
 // Menu do celular: no máximo 5 itens
-conferir('coordenador: 4 + Mais', itensDaBarra('Coordenador'), { barra: ['painel', 'frentes', 'diario', 'medicoes', 'mais'], mais: ['empreiteiros', 'restricoes', 'materiais', 'planejamento', 'rdo', 'admin', 'perfil'] })
+conferir('coordenador: 4 + Mais', itensDaBarra('Coordenador'), { barra: ['painel', 'frentes', 'diario', 'medicoes', 'mais'], mais: ['restricoes', 'materiais', 'planejamento', 'rdo', 'admin', 'perfil'] })
 conferir('cliente: 3 itens, sem Mais', itensDaBarra('Cliente').mais, [])
 
 // Diário de Obra (RDO)

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Chip, Icone, Vazio } from '../../components/index.jsx'
 import {
-  acumuladoDoItem, boletimDasEntradas, errosBoletim, medidoDoContrato, MODOS, pctDaQuantidade, pctDoValor, percentualMedido,
-  proximoNumero, quantidadeDaEntrada, rotuloPercentual, saldoDoContrato, saldoDoItem, valorDaEntradaGlobal,
+  acumuladoDepois, acumuladoDoItem, boletimDasEntradas, errosBoletim, medidoDoContrato, MODOS, pctDaQuantidade, pctDoValor, percentualAMedir,
+  percentualMedido, proximoNumero, quantidadeDaEntrada, recebeMedicao, rotuloPercentual, saldoDoContrato, saldoDoItem, valorDaEntradaGlobal,
+  valorDaQuantidade,
 } from '../../lib/empreiteiros.js'
 import { formatarData, formatarDinheiro, limparNumero } from '../../lib/regras.js'
 import { Folha } from '../planejamento/ui.jsx'
@@ -22,8 +23,8 @@ function FormBoletim({ contrato, itens, medicoes, hoje, onSalvar, onFechar }) {
   const [entradas, setEntradas] = useState({})
   const erros = errosBoletim({ contrato, itens, medicoes, entradas, data }, hoje)
   const { aviso, tocar, tentar } = useAvisos(erros)
-  const boletim = boletimDasEntradas(contrato, itens, entradas, data)
-  const acumulado = medidoDoContrato(contrato, medicoes) + boletim.valor
+  const boletim = boletimDasEntradas(contrato, itens, entradas, data, medicoes)
+  const acumulado = acumuladoDepois(contrato, medicoes, boletim.valor)
   const global = contrato.modo === 'global'
 
   const digitar = (chave, campo, texto) => setEntradas((e) => {
@@ -107,7 +108,7 @@ function FormBoletim({ contrato, itens, medicoes, hoje, onSalvar, onFechar }) {
                         <label htmlFor={`mv-${item.id}`}>Valor (R$)</label>
                         <input
                           id={`mv-${item.id}`} className="input" inputMode="decimal" maxLength={13} placeholder="0,00"
-                          value={mostrar(entrada, 'valor', () => (q * item.precoUnitario).toFixed(2).replace('.', ','))}
+                          value={mostrar(entrada, 'valor', () => valorDaQuantidade(item, medicoes, q).toFixed(2).replace('.', ','))}
                           onChange={(e) => digitar(item.id, 'valor', e.target.value)} onBlur={() => tocar(chave)}
                         />
                       </div>
@@ -158,7 +159,7 @@ export default function Ficha({ contrato, itens, medicoes, hoje, podeMedir, onVo
   const [formAberto, setFormAberto] = useState(false)
   const doContrato = medicoes.filter((m) => m.contratoId === contrato.id).sort((a, b) => b.numero - a.numero)
   const pct = percentualMedido(contrato, medicoes)
-  const podeNova = podeMedir && contrato.status === 'ativo'
+  const podeNova = podeMedir && recebeMedicao(contrato)
   const nova = podeNova && <button className="btn" onClick={() => setFormAberto(true)}><Icone nome="plus" />Nova medição</button>
 
   return (
@@ -170,13 +171,13 @@ export default function Ficha({ contrato, itens, medicoes, hoje, podeMedir, onVo
         <div className="resumo-grade">
           <div className="cont"><span>Valor total</span><b>{formatarDinheiro(contrato.valorTotal)}</b></div>
           <div className="cont"><span>Medido acumulado</span><b>{formatarDinheiro(medidoDoContrato(contrato, medicoes))}</b><span>{rotuloPercentual(pct)}</span></div>
-          <div className="cont"><span>Saldo a medir</span><b>{formatarDinheiro(saldoDoContrato(contrato, medicoes))}</b><span>{rotuloPercentual(100 - pct)}</span></div>
+          <div className="cont"><span>Saldo a medir</span><b>{formatarDinheiro(saldoDoContrato(contrato, medicoes))}</b><span>{rotuloPercentual(percentualAMedir(contrato, medicoes))}</span></div>
         </div>
         <div className="pbar">
           <div className="tr" role="progressbar" aria-label="Percentual medido" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}><i style={{ width: `${Math.min(100, pct)}%` }} /></div>
         </div>
         {nova && <div style={{ marginTop: 12 }}>{nova}</div>}
-        {!podeNova && contrato.status !== 'ativo' && <p className="mono">Contrato concluído: só consulta.</p>}
+        {!recebeMedicao(contrato) && <p className="mono">Este contrato não está ativo: só consulta.</p>}
       </div>
 
       <h2 className="secao">Histórico de medições</h2>

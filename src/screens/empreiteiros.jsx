@@ -3,8 +3,8 @@ import { Chip, Icone, Topo, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
 import { criarContrato, criarMedicao, listarContratos, moverContrato } from '../lib/dados.js'
 import {
-  aplicarMovimentoContrato, colunaAntes, colunaDepois, COLUNAS_CONTRATO, errosContrato, medidoDoContrato, MODOS, novaMedicao, novoContrato,
-  percentualMedido, rotuloPercentual, verificarMovimento,
+  aplicarMovimentoContrato, colunaContratoAntes, colunaContratoDepois, COLUNAS_CONTRATO, errosContrato, medidoDoContrato, mostraMedido, MODOS, novaMedicao, novoContrato,
+  pedeCadastroDoValor, percentualMedido, rotuloPercentual, verificarMovimento,
 } from '../lib/empreiteiros.js'
 import { formatarDinheiro, pode } from '../lib/regras.js'
 import { Folha } from './planejamento/ui.jsx'
@@ -45,9 +45,9 @@ function FormNovo({ onSalvar, onFechar }) {
 }
 
 function Cartao({ c, medicoes, podeMover, onMover, onAbrir }) {
-  const antes = colunaAntes(c.status)
-  const depois = colunaDepois(c.status)
-  const mostraBarra = c.status === 'ativo' || c.status === 'concluido'
+  const antes = colunaContratoAntes(c.status)
+  const depois = colunaContratoDepois(c.status)
+  const mostraBarra = mostraMedido(c)
   const pct = percentualMedido(c, medicoes)
   const ocupado = provisorio(c)
   return (
@@ -73,7 +73,8 @@ function Cartao({ c, medicoes, podeMover, onMover, onAbrir }) {
   )
 }
 
-export default function Empreiteiros({ avisar }) {
+// `embutida`: dentro da aba Empreiteiros da tela Medições (sem título próprio; o botão de novo contrato vem no topo da aba).
+export default function Empreiteiros({ avisar, embutida = false }) {
   const { obra, hoje, usuario } = useDados()
   const [estado, setEstado] = useState({ status: 'carregando', contratos: [], itens: [], medicoes: [] })
   const [rodada, setRodada] = useState(0)
@@ -101,7 +102,7 @@ export default function Empreiteiros({ avisar }) {
 
   // Otimista: o card aparece já; se o salvamento falhar, ele sai e a pessoa é avisada.
   const criar = async (campos) => {
-    const temp = novoContrato({ ...campos, id: `novo-${Date.now()}`, obraCodigo: obra.codigo }, hoje)
+    const temp = novoContrato({ ...campos, id: `novo-${Date.now()}`, obraId: obra.id }, hoje)
     setEstado((e) => ({ ...e, contratos: [...e.contratos, temp] }))
     setAberto(null)
     const { data, erro } = await criarContrato(obra, campos, hoje)
@@ -132,7 +133,7 @@ export default function Empreiteiros({ avisar }) {
     if (erro) {
       trocarContrato(novo, c)
       if (cadastro) trocarItens(c.id, itensAntes)
-      avisar('Não consegui mover o contrato. Tente de novo.')
+      avisar(erro.regra ? erro.message : 'Não consegui mover o contrato. Tente de novo.')
       return
     }
     if (cadastro) trocarItens(c.id, data.itens)
@@ -145,7 +146,7 @@ export default function Empreiteiros({ avisar }) {
     const { data, erro } = await criarMedicao(obra, c.id, boletim)
     if (erro) {
       setEstado((e) => ({ ...e, medicoes: e.medicoes.filter((m) => m !== temp) }))
-      avisar(erro.message.startsWith('Passa de') ? erro.message : 'Não consegui salvar a medição. Tente de novo.')
+      avisar(erro.regra ? erro.message : 'Não consegui salvar a medição. Tente de novo.')
       return
     }
     setEstado((e) => ({ ...e, medicoes: e.medicoes.map((m) => (m === temp ? data : m)) }))
@@ -153,7 +154,7 @@ export default function Empreiteiros({ avisar }) {
   }
   // Ativar pede o valor antes; as demais trocas são diretas.
   const pedirMover = (c, status) => {
-    if (status === 'ativo' && colunaDepois(c.status)?.id === 'ativo') setAberto({ tipo: 'valor', contrato: c })
+    if (pedeCadastroDoValor(c, status)) setAberto({ tipo: 'valor', contrato: c })
     else mover(c, status)
   }
 
@@ -168,7 +169,7 @@ export default function Empreiteiros({ avisar }) {
   if (ficha) {
     return (
       <>
-        <Topo titulo="Ficha de medição" subtitulo={`${obra.codigo} — ${obra.nome}`} />
+        {!embutida && <Topo titulo="Ficha de medição" subtitulo={`${obra.codigo} — ${obra.nome}`} />}
         <Ficha
           contrato={ficha} itens={estado.itens.filter((i) => i.contratoId === ficha.id)} medicoes={estado.medicoes} hoje={hoje}
           podeMedir={podeMover} onVoltar={() => abrirFicha(null)} onSalvar={lancarMedicao}
@@ -179,7 +180,9 @@ export default function Empreiteiros({ avisar }) {
 
   return (
     <>
-      <Topo titulo="Empreiteiros" subtitulo={`Fluxo dos contratos · ${obra.codigo} — ${obra.nome}`}>{novo}</Topo>
+      {embutida
+        ? estado.contratos.length > 0 && <div style={{ marginTop: 14 }}>{novo}</div>
+        : <Topo titulo="Empreiteiros" subtitulo={`Fluxo dos contratos · ${obra.codigo} — ${obra.nome}`}>{novo}</Topo>}
       {estado.status === 'carregando' && <p className="mono" role="status">Carregando contratos…</p>}
       {estado.status === 'erro' && (
         <div className="empty" role="alert">
@@ -189,7 +192,7 @@ export default function Empreiteiros({ avisar }) {
         </div>
       )}
       {estado.status === 'ok' && estado.contratos.length === 0 && (
-        <Vazio icone="empreiteiros" titulo="Nenhum contrato ainda" texto="Crie o primeiro contrato desta obra: informe o empreiteiro e o serviço.">
+        <Vazio icone="empreiteiros" titulo="Nenhum contrato ainda" texto={podeMover ? 'Crie o primeiro contrato desta obra: informe o empreiteiro e o serviço.' : 'Ainda não há contratos nesta obra.'}>
           {novo}
         </Vazio>
       )}

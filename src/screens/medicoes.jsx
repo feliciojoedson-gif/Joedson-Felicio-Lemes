@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Aba, Seletor, Topo, Vazio } from '../components/index.jsx'
 import { useDados } from '../lib/DadosContext.jsx'
+import Empreiteiros from './empreiteiros.jsx'
 import {
   concluidaSemMedicao, DISCIPLINAS, formatarData, formatarDinheiro, formatarMes, pode,
 } from '../lib/regras.js'
@@ -26,13 +27,15 @@ export default function Medicoes({ avisar }) {
   return (
     <>
       <Topo titulo="Medições" />
-      <div className="filters one">
+      {aba !== 'empreiteiros' && <div className="filters one">
         <Seletor valor={disc} onTroca={setDisc} rotulo="Disciplina" todas="Todas as disciplinas" opcoes={DISCIPLINAS.map((d) => [d, d])} />
         {aba === 'historico' && <Seletor valor={mes} onTroca={setMes} rotulo="Mês" todas="Todos os meses" opcoes={meses.map((m) => [m, formatarMes(m)])} />}
-      </div>
+      </div>}
       <div style={{ marginTop: 14 }}>
-        <Aba valor={aba} onTroca={setAba} opcoes={[['medir', 'A medir'], ['historico', 'Histórico']]} />
+        <Aba valor={aba} onTroca={setAba} opcoes={[['medir', 'A medir'], ['historico', 'Histórico'], ['empreiteiros', 'Empreiteiros']]} />
       </div>
+
+      {aba === 'empreiteiros' && <Empreiteiros avisar={avisar} embutida />}
 
       {aba === 'medir' && (aMedir.length === 0
         ? <Vazio icone="medicoes" titulo="Nada a medir" texto="Nenhuma frente a medir agora." />

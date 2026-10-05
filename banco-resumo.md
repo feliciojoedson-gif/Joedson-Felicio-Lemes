@@ -15,6 +15,9 @@ Todas as tabelas têm RLS (segurança por linha) **ligada e apertada de verdade*
 | `fotos` | **Diário de Obra**: uma linha por foto (caminho do arquivo no bucket privado `fotos`, legenda, visível ao cliente) | `obra_id`; guarda só o caminho; o link assinado (1 h) é gerado na leitura |
 | `medicoes` | Medição mensal por frente (quantidade, %, valor, status em duas aprovações) | `obra_id`; ainda sem formulário que grave |
 | `restricoes` | Restrições, RFIs, riscos e pleitos | `obra_id`; ainda sem formulário que grave |
+| `contratos_empreiteiro` | **Empreiteiros**: contrato por obra (empreiteiro, serviço, coluna do Kanban, global ou escopo, valor total) | `obra_id`; gatilho barra concluir sem 100% medido e pular coluna; ativar pela função `ativar_contrato_empreiteiro` |
+| `itens_contrato` | Itens do escopo (descrição, unidade m2/m/un/vb, quantidade, preço unitário) | `obra_id`; não muda depois da 1ª medição |
+| `boletins_empreiteiro` | Boletins de medição numerados do contrato (data, valor, quantidade por item em `linhas`) | `obra_id`; o banco numera e barra passar de 100%; sem UPDATE/DELETE |
 | `auditoria` | Histórico de quem mudou o quê e a marca da virada diária | Só leitura para perfis altos |
 
 Views (recortes de leitura): `frentes_cliente`, `medicoes_cliente` (Cliente vê menos colunas), `apontamentos_sem_efetivo` (Engenharia não vê efetivo), `perfis_colegas` (nome e perfil).
