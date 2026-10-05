@@ -88,6 +88,14 @@ Mora na tela **Medições**, aba "Empreiteiros" (`src/screens/empreiteiros.jsx` 
 - Perfis que criam/movem/medem: Coordenador, Planejamento, Medição (`gerirEmpreiteiros` e a RLS); os demais só consultam. Mudou permissão: mude a policy, `regras.js` e o teste SQL no mesmo lote.
 - `mockData.js` (`contratos`, `itensContrato`, `medicoes`) virou massa de teste de `tests/empreiteiros.mjs`: nenhuma tela o importa.
 
+## Módulo Qualidade (Pendências, FVS, Gemba Walk, Relatório)
+
+Tela `qualidade` em `src/screens/qualidade.jsx` (menu: Coordenador, Planejamento, Engenharia, Produção, Diretoria só leitura; criar/editar = `gerirQualidade`). Três abas em `src/screens/qualidade/` (`pendencias.jsx`, `fvs*.jsx` com Vistorias/NCs/Modelos, `gemba.jsx`) e o botão "Relatório" (`relatorio.jsx`, portal no `<body>` + `window.print()`).
+- **UM estado** em `src/lib/QualidadeContext.jsx` (remontado a cada troca de obra), gravação otimista com rollback. Os filtros de cada aba moram nele para o relatório respeitá-los. Regras puras em `src/lib/qualidade.js`; testes em `tests/qualidade*.mjs`.
+- **Ainda sem banco:** dados em memória em `dados.js` (`ponytail:`), exemplo em `mockData.js` (`obraCodigo`: U12 completa, T405 enxuta). Modelos de FVS valem para a empresa toda; vistorias, NCs, pendências e observações de Gemba são por obra. Registros novos nascem com id uuid e código/número calculados no contexto (`NC-001`, `#1` por obra); com o banco, a numeração passa para ele.
+- A vistoria guarda uma **cópia** dos grupos do modelo; editar o modelo sobe a versão e não mexe em vistoria feita. Item marcado NC só nasce pelo painel de NC e depois não volta a OK.
+- Impressão: `.no-print` esconde menu/botões; com o relatório aberto `body.q-imprimindo #root` some no `@media print`. Fotos são só preview local (`URL.createObjectURL`), sem upload.
+
 ## Armadilhas desta base
 
 - **Banco:** projeto Supabase `kaefer-rip` (`rbqzyxyneuqbeyvjdzom`, São Paulo). Chaves em `.env.local` (fora do git; modelo em `.env.example`). Migrations em `supabase/migrations/` e testes de RLS em `supabase/tests/*.sql` (cada um termina em erro `RELATORIO` de propósito, para não gravar nada).

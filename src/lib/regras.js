@@ -16,15 +16,15 @@ export const STATUS_RESTRICAO = ['Aberta', 'Em tratamento', 'Resolvida']
 // ---------- Menus e permissões ----------
 
 export const MENUS = {
-  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'rdo', 'admin', 'perfil'],
-  Planejamento: ['painel', 'frentes', 'planejamento', 'medicoes', 'materiais', 'perfil'],
-  Engenharia: ['restricoes', 'frentes', 'perfil'],
-  Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'materiais', 'planejamento', 'perfil'],
+  Coordenador: ['painel', 'frentes', 'diario', 'medicoes', 'restricoes', 'materiais', 'planejamento', 'qualidade', 'rdo', 'admin', 'perfil'],
+  Planejamento: ['painel', 'frentes', 'planejamento', 'medicoes', 'materiais', 'qualidade', 'perfil'],
+  Engenharia: ['restricoes', 'frentes', 'qualidade', 'perfil'],
+  Produção: ['diario', 'rdo', 'frentes', 'restricoes', 'materiais', 'planejamento', 'qualidade', 'perfil'],
   Medição: ['medicoes', 'frentes', 'perfil'],
   'Custos e Controle': ['painel', 'medicoes', 'perfil'],
   'Gestão Contratual': ['restricoes', 'medicoes', 'frentes', 'perfil'],
   Cliente: ['painel', 'fotos', 'perfil'],
-  Diretoria: ['painel', 'medicoes', 'restricoes', 'perfil'],
+  Diretoria: ['painel', 'medicoes', 'restricoes', 'qualidade', 'perfil'],
   Administrador: ['painel', 'medicoes', 'restricoes', 'admin', 'perfil'],
 }
 
@@ -37,6 +37,7 @@ export const ROTULOS = {
   restricoes: 'Restrições',
   materiais: 'Materiais',
   planejamento: 'Planejamento',
+  qualidade: 'Qualidade',
   fotos: 'Fotos',
   admin: 'Administração',
   perfil: 'Meu perfil',
@@ -67,6 +68,7 @@ const PERMISSOES = {
   liberarFoto: ['Coordenador'],
   administrar: ['Coordenador'],
   rodarAtualizacao: ['Coordenador'],
+  gerirQualidade: ['Coordenador', 'Planejamento', 'Engenharia', 'Produção'],
   gerirMateriais: ['Coordenador', 'Planejamento', 'Produção'],
   gerirEmpreiteiros: ['Coordenador', 'Planejamento', 'Medição'],
 }

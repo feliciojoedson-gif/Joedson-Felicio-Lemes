@@ -15,10 +15,11 @@ import Mais from '../screens/mais.jsx'
 import Rdo from '../screens/rdo.jsx'
 import Materiais from '../screens/materiais.jsx'
 import Planejamento from '../screens/planejamento.jsx'
+import Qualidade from '../screens/qualidade.jsx'
 
 const TELAS = {
   painel: Painel, frentes: Frentes, detalhe: Detalhe, diario: Diario, medicoes: Medicoes,
-  restricoes: Restricoes, fotos: Fotos, admin: Admin, perfil: Perfil, mais: Mais, rdo: Rdo, materiais: Materiais, planejamento: Planejamento,
+  restricoes: Restricoes, fotos: Fotos, admin: Admin, perfil: Perfil, mais: Mais, rdo: Rdo, materiais: Materiais, planejamento: Planejamento, qualidade: Qualidade,
 }
 
 // Uma shell para todos os perfis: o que muda é o menu, que vem de lib/regras.js.
@@ -52,7 +53,7 @@ export default function Shell({ onSair }) {
 
   return (
     <div className="app">
-      <aside className="sidebar">
+      <aside className="sidebar no-print">
         <Logo />
         <nav>
           {menuDoPerfil(usuario.role).map((k) => (
@@ -65,8 +66,8 @@ export default function Shell({ onSair }) {
       </aside>
 
       <main className="main">
-        <div className="logobar"><Logo /></div>
-        <div className="obrabar">
+        <div className="logobar no-print"><Logo /></div>
+        <div className="obrabar no-print">
           <label htmlFor="obra-atual">Obra</label>
           <select id="obra-atual" value={obra?.id ?? ''} onChange={(e) => trocar(e.target.value)} disabled={!obra}>
             {obras.map((o) => <option key={o.id} value={o.id}>{o.codigo} — {o.nome}</option>)}
@@ -78,14 +79,14 @@ export default function Shell({ onSair }) {
           : <div className="empty" style={{ marginTop: 16 }}><h3>Nenhuma obra liberada</h3><p>Peça ao coordenador para ligar você a uma obra.</p></div>}
       </main>
 
-      <nav className="bottomnav">
+      <nav className="bottomnav no-print">
         {barra.map((k) => (
           <button key={k} className={destacarNaBarra(k) ? 'on' : ''} onClick={() => goto(k)}>
             <Icone nome={k} />{ROTULOS[k]}
           </button>
         ))}
       </nav>
-      <div className={`toast ${aviso ? 'show' : ''}`} role="status">{aviso}</div>
+      <div className={`toast no-print ${aviso ? 'show' : ''}`} role="status">{aviso}</div>
     </div>
   )
 }

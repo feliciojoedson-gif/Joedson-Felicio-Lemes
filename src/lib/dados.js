@@ -5,7 +5,9 @@
 // APP MULTI-OBRA: tudo que é lançamento (frentes, diário, fotos, medições, restrições)
 // sai daqui já recortado por UMA obra. Nenhuma tela recebe dado de duas obras juntas.
 import { supabase } from './supabase.js'
-import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, planejamentoDeExemplo } from './mockData.js'
+import { diarios as diariosDeExemplo, materiaisCatalogo, pedidos as pedidosDeExemplo, pendenciasDeExemplo, planejamentoDeExemplo,
+  modelosFvs as modelosFvsDeExemplo, vistoriasDeExemplo, ncsDeExemplo, gembaDeExemplo } from './mockData.js'
+import { acrescentarObservacao, aplicarMudanca, errosMudanca, novaPendencia, proximoNumero } from './qualidade.js'
 import {
   aplicarAtividade, aplicarRestricao, arquivarAtividade, calendarioPadrao, reprogramarRestricao, resolverRestricao,
   restricoesDaImportacao, baselineDaImportacao, criarBaseline,
@@ -351,4 +353,126 @@ export async function substituirAtividade(obra, atividade) {
 
 export async function salvarCalendario(obra, calendario) {
   return gravarPlanejamento(obra, { calendario })
+}
+
+// QUALIDADE: também em memória (volta ao exemplo ao recarregar). Sempre recortado por UMA obra.
+// ponytail: trocar pelo Supabase (tabelas com obra_id e RLS por obra; numeroRegistro vira sequência por obra).
+const pendenciasEmMemoria = pendenciasDeExemplo.map((p) => ({ ...p }))
+const daObraQ = (lista, obra) => lista.filter((x) => x.obraCodigo === obra.codigo)
+
+export async function listarPendencias(obra) {
+  return { data: daObraQ(pendenciasEmMemoria, obra).map((p) => ({ ...p })), erro: null }
+}
+
+export async function criarPendencia(obra, campos, usuarioNome) {
+  const registro = novaPendencia(campos, {
+    id: Math.max(0, ...pendenciasEmMemoria.map((p) => p.id)) + 1,
+    obraCodigo: obra.codigo,
+    numeroRegistro: proximoNumero(daObraQ(pendenciasEmMemoria, obra)),
+  }, usuarioNome)
+  pendenciasEmMemoria.push(registro)
+  return { data: { ...registro }, erro: null }
+}
+
+// Só mexe em pendência da obra informada.
+const acharPendencia = (obra, id) => pendenciasEmMemoria.findIndex((p) => p.id === id && p.obraCodigo === obra.codigo)
+
+export async function mudarStatusPendencia(obra, id, para, dados, hoje) {
+  const i = acharPendencia(obra, id)
+  if (i < 0) return { data: null, erro: new Error('pendência não encontrada') }
+  const recusa = errosMudanca(pendenciasEmMemoria[i], para, dados)
+  if (recusa) return { data: null, erro: bloqueioDeRegra(recusa) }
+  pendenciasEmMemoria[i] = aplicarMudanca(pendenciasEmMemoria[i], para, dados, hoje)
+  return { data: { ...pendenciasEmMemoria[i] }, erro: null }
+}
+
+export async function adicionarObservacaoPendencia(obra, id, texto, agora) {
+  const i = acharPendencia(obra, id)
+  if (i < 0) return { data: null, erro: new Error('pendência não encontrada') }
+  pendenciasEmMemoria[i] = { ...pendenciasEmMemoria[i], observacoes: acrescentarObservacao(pendenciasEmMemoria[i].observacoes, texto, agora) }
+  return { data: { ...pendenciasEmMemoria[i] }, erro: null }
+}
+
+export async function excluirPendencia(obra, id) {
+  const i = acharPendencia(obra, id)
+  if (i < 0) return { data: null, erro: new Error('pendência não encontrada') }
+  pendenciasEmMemoria.splice(i, 1)
+  return { data: true, erro: null }
+}
+
+// QUALIDADE — FVS: modelos (da empresa toda), vistorias e não conformidades (de uma obra só). Em memória, como o resto do módulo.
+// A tela monta o registro inteiro (ids e códigos incluídos) e a camada só guarda: com o banco, ela passa a numerar.
+// ponytail: trocar pelo Supabase (modelos globais; vistorias e NCs com obra_id, RLS por obra e a gravação da NC numa função só).
+const modelosEmMemoria = structuredClone(modelosFvsDeExemplo)
+const vistoriasEmMemoria = structuredClone(vistoriasDeExemplo)
+const ncsEmMemoria = structuredClone(ncsDeExemplo)
+
+const guardar = (lista, registro) => {
+  const i = lista.findIndex((x) => x.id === registro.id)
+  if (i < 0) lista.push(structuredClone(registro))
+  else lista[i] = structuredClone(registro)
+}
+// Só aceita registro da obra informada: nunca grava dado de outra obra.
+const daObraOuErro = (obra, ...registros) =>
+  registros.every((r) => r.obraCodigo === obra.codigo) ? null : { data: null, erro: new Error('registro de outra obra') }
+
+export async function listarModelosFvs() {
+  return { data: structuredClone(modelosEmMemoria), erro: null }
+}
+export async function salvarModeloFvs(modelo) {
+  guardar(modelosEmMemoria, modelo)
+  return { data: structuredClone(modelo), erro: null }
+}
+export async function excluirModeloFvs(id) {
+  const i = modelosEmMemoria.findIndex((m) => m.id === id)
+  if (i < 0) return { data: null, erro: new Error('modelo não encontrado') }
+  modelosEmMemoria.splice(i, 1)
+  return { data: true, erro: null }
+}
+
+export async function listarVistorias(obra) {
+  return { data: structuredClone(daObraQ(vistoriasEmMemoria, obra)), erro: null }
+}
+export async function listarNcs(obra) {
+  return { data: structuredClone(daObraQ(ncsEmMemoria, obra)), erro: null }
+}
+export async function salvarVistoria(obra, vistoria) {
+  const recusa = daObraOuErro(obra, vistoria)
+  if (recusa) return recusa
+  guardar(vistoriasEmMemoria, vistoria)
+  return { data: structuredClone(vistoria), erro: null }
+}
+export async function salvarNc(obra, nc) {
+  const recusa = daObraOuErro(obra, nc)
+  if (recusa) return recusa
+  guardar(ncsEmMemoria, nc)
+  return { data: structuredClone(nc), erro: null }
+}
+// Marcar NC no item grava a NC e a resposta da vistoria juntas (ou nenhuma das duas).
+export async function registrarNc(obra, vistoria, nc) {
+  const recusa = daObraOuErro(obra, vistoria, nc)
+  if (recusa) return recusa
+  guardar(ncsEmMemoria, nc)
+  guardar(vistoriasEmMemoria, vistoria)
+  return { data: { vistoria: structuredClone(vistoria), nc: structuredClone(nc) }, erro: null }
+}
+
+// QUALIDADE — Gemba Walk: observações de desperdício de UMA obra. Em memória; a tela monta o registro inteiro.
+// ponytail: trocar pelo Supabase (tabela com obra_id, RLS por obra e desperdicios como lista com CHECK nos 7 nomes).
+const gembaEmMemoria = structuredClone(gembaDeExemplo)
+
+export async function listarGemba(obra) {
+  return { data: structuredClone(daObraQ(gembaEmMemoria, obra)), erro: null }
+}
+export async function salvarGemba(obra, observacao) {
+  const recusa = daObraOuErro(obra, observacao)
+  if (recusa) return recusa
+  guardar(gembaEmMemoria, observacao)
+  return { data: structuredClone(observacao), erro: null }
+}
+export async function excluirGemba(obra, id) {
+  const i = gembaEmMemoria.findIndex((o) => o.id === id && o.obraCodigo === obra.codigo)
+  if (i < 0) return { data: null, erro: new Error('observação não encontrada') }
+  gembaEmMemoria.splice(i, 1)
+  return { data: true, erro: null }
 }

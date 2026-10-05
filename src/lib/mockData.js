@@ -192,3 +192,165 @@ export const medicoes = [
   { id: 6, contratoId: 5, numero: 2, data: '2026-09-18', valor: 4000, linhas: [] },
   { id: 7, contratoId: 6, numero: 1, data: '2026-09-30', valor: 10000, linhas: [] },
 ]
+
+// QUALIDADE — Pendências (vistoria rápida). Fotos de exemplo em quadro colorido, como no RDO. "Hoje" no exemplo = 2026-10-04.
+const fotoQ = (cor, rotulo) =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="${cor}"/><text x="320" y="250" font-family="Arial" font-size="38" font-weight="700" fill="#fff" text-anchor="middle">${rotulo}</text></svg>`,
+  )}`
+
+const pend = (o) => ({ pavimento: '', foto: '', fotoEvidencia: '', dataResolucao: '', observacoes: '', ...o })
+export const pendenciasDeExemplo = [
+  pend({ id: 1, obraCodigo: 'U12', numeroRegistro: 1, descricao: 'Solda do spool 14 com respingos e sem acabamento na linha L-340.', local: 'Linha L-340', pavimento: 'Rack 3',
+    empresa: 'Metalúrgica Alfa', prazo: '2026-10-02', responsavel: 'Carlos Menezes', dataVistoria: '2026-09-28', vistoriadoPor: 'Ana Souza',
+    status: 'pendente', foto: fotoQ('#5B5754', 'Solda do spool 14'),
+    observacoes: '[30/09/2026 09:12] Empresa pediu mais 2 dias por falta de esmerilhadeira.\n[28/09/2026 15:40] Registrado na vistoria de rotina.' }),
+  pend({ id: 2, obraCodigo: 'U12', numeroRegistro: 2, descricao: 'Escorrimento de tinta na segunda demão do pórtico P-3.', local: 'Pórtico P-3', pavimento: 'Cota 8 m',
+    empresa: 'Pinturas Beta', prazo: '2026-10-04', responsavel: 'Juliana Prado', dataVistoria: '2026-09-29', vistoriadoPor: 'Ana Souza',
+    status: 'em_andamento', foto: fotoQ('#C92D16', 'Pórtico P-3'),
+    observacoes: '[03/10/2026 16:05] Lixamento feito, falta a nova demão.' }),
+  pend({ id: 3, obraCodigo: 'U12', numeroRegistro: 3, descricao: 'Guarda-corpo da plataforma do forno F-101 sem rodapé.', local: 'Forno F-101', pavimento: 'Plataforma norte',
+    empresa: 'Metalúrgica Alfa', prazo: '2026-10-07', responsavel: 'Carlos Menezes', dataVistoria: '2026-10-02', vistoriadoPor: 'Ricardo Lopes',
+    status: 'pendente', foto: fotoQ('#E1371E', 'Guarda-corpo F-101') }),
+  pend({ id: 4, obraCodigo: 'U12', numeroRegistro: 4, descricao: 'Eletroduto sem fixação no trecho que chega ao painel PC-12.', local: 'Painel PC-12',
+    empresa: 'Elétrica Gama', prazo: '2026-10-09', responsavel: 'Juliana Prado', dataVistoria: '2026-10-01', vistoriadoPor: 'Ana Souza',
+    status: 'em_andamento', foto: fotoQ('#3A3735', 'Eletroduto PC-12'), observacoes: '[03/10/2026 08:30] Braçadeiras compradas, instalação amanhã.' }),
+  pend({ id: 5, obraCodigo: 'U12', numeroRegistro: 5, descricao: 'Isolamento térmico danificado em trecho da linha L-212.', local: 'Linha L-212', pavimento: 'Rack 1',
+    empresa: 'Pinturas Beta', prazo: '2026-09-30', responsavel: 'Juliana Prado', dataVistoria: '2026-09-25', vistoriadoPor: 'Ricardo Lopes',
+    status: 'resolvido', foto: fotoQ('#5E5A57', 'Isolamento L-212'), fotoEvidencia: fotoQ('#2E8B57', 'Corrigido L-212'), dataResolucao: '2026-10-01',
+    observacoes: '[01/10/2026 11:20] Trecho refeito e conferido com a fiscalização.\n[25/09/2026 14:10] Vistoria: manta rasgada por passagem de andaime.' }),
+  pend({ id: 6, obraCodigo: 'U12', numeroRegistro: 6, descricao: 'Tubulação de água de resfriamento sem sinalização de fluxo.', local: 'Casa de bombas',
+    empresa: 'Pinturas Beta', prazo: '2026-10-12', responsavel: 'Juliana Prado', dataVistoria: '2026-10-03', vistoriadoPor: 'Ana Souza',
+    status: 'pendente', foto: fotoQ('#2B2928', 'Sem sinalização') }),
+  pend({ id: 7, obraCodigo: 'T405', numeroRegistro: 1, descricao: 'Chapa do fundo do tanque com empeno acima do tolerado.', local: 'Fundo do tanque T-405', pavimento: 'Anel 1',
+    empresa: 'Metalúrgica Alfa', prazo: '2026-10-10', responsavel: 'Rafael Lima', dataVistoria: '2026-10-03', vistoriadoPor: 'Rafael Lima',
+    status: 'pendente', foto: fotoQ('#5B5754', 'Empeno chapa T-405') }),
+  pend({ id: 8, obraCodigo: 'T405', numeroRegistro: 2, descricao: 'Cordão de solda com porosidade visível na junta 7.', local: 'Costado T-405', pavimento: 'Junta 7',
+    empresa: 'Metalúrgica Alfa', prazo: '2026-10-06', responsavel: 'Rafael Lima', dataVistoria: '2026-10-01', vistoriadoPor: 'Rafael Lima',
+    status: 'em_andamento', foto: fotoQ('#C92D16', 'Porosidade junta 7'), observacoes: '[03/10/2026 13:45] Esmerilhado, aguardando reparo e novo ensaio.' }),
+]
+
+// QUALIDADE — FVS. Modelos valem para a empresa toda; vistorias e NCs são de uma obra (`obraCodigo`).
+export const modelosFvs = [
+  { id: 1, codigo: 'FVS-01', nome: 'Impermeabilização — Áreas Molhadas', categoria: 'Impermeabilização', versao: 2, grupos: [
+    { nome: 'Pré-execução', itens: [
+      { id: 101, titulo: 'Substrato limpo, seco e sem falhas' },
+      { id: 102, titulo: 'Caimento do contrapiso em direção ao ralo conferido' },
+      { id: 103, titulo: 'Cantos e arestas arredondados (meia-cana executada)' },
+    ] },
+    { nome: 'Execução', itens: [
+      { id: 104, titulo: 'Primer aplicado em toda a área' },
+      { id: 105, titulo: 'Número de demãos conforme o projeto' },
+      { id: 106, titulo: 'Reforço com tela nos ralos e rodapés' },
+      { id: 107, titulo: 'Subida da impermeabilização no rodapé com no mínimo 30 cm' },
+    ] },
+    { nome: 'Proteção e acabamento', itens: [
+      { id: 108, titulo: 'Teste de estanqueidade por 72 h sem vazamento' },
+      { id: 109, titulo: 'Proteção mecânica executada sobre a manta' },
+    ] },
+  ] },
+  { id: 2, codigo: 'FVS-02', nome: 'Revestimento Cerâmico', categoria: 'Acabamento', versao: 1, grupos: [
+    { nome: 'Preparo da base', itens: [
+      { id: 201, titulo: 'Base nivelada, limpa e curada' },
+      { id: 202, titulo: 'Argamassa colante adequada ao formato da peça' },
+      { id: 203, titulo: 'Paginação conferida com o projeto' },
+    ] },
+    { nome: 'Aplicação e acabamento', itens: [
+      { id: 204, titulo: 'Colagem dupla em peças grandes' },
+      { id: 205, titulo: 'Juntas uniformes e alinhadas' },
+      { id: 206, titulo: 'Ausência de peças ocas (teste de percussão)' },
+      { id: 207, titulo: 'Rejunte aplicado e superfície limpa' },
+    ] },
+  ] },
+]
+
+const vistoriaMock = (id, obraCodigo, modeloId, ambiente, status, respostas, extra) => {
+  const m = modelosFvs.find((x) => x.id === modeloId)
+  return { id, obraCodigo, modeloId, modeloCodigo: m.codigo, modeloNome: m.nome, versao: m.versao, ambiente, grupos: structuredClone(m.grupos),
+    respostas, status, concluidaEm: '', ...extra }
+}
+
+export const vistoriasDeExemplo = [
+  vistoriaMock(1, 'U12', 2, 'Cozinha · Térreo', 'concluida',
+    { 201: 'ok', 202: 'ok', 203: 'ok', 204: 'ok', 205: 'nc', 206: 'nc', 207: 'na' },
+    { criadaEm: '2026-09-28', criadaPor: 'Ana Souza', concluidaEm: '2026-09-29' }),
+  vistoriaMock(2, 'U12', 1, 'Banheiro Social · Térreo', 'em_andamento',
+    { 101: 'ok', 102: 'ok', 103: 'nc', 104: 'ok', 105: 'nc' },
+    { criadaEm: '2026-10-02', criadaPor: 'Ricardo Lopes' }),
+  vistoriaMock(3, 'T405', 1, 'Piso do tanque · Anel 1', 'em_andamento',
+    { 101: 'ok', 102: 'nc' },
+    { criadaEm: '2026-10-03', criadaPor: 'Rafael Lima' }),
+]
+
+const ncMock = (o) => ({ fotos: [], fechadaEm: '', ...o })
+export const ncsDeExemplo = [
+  ncMock({ id: 1, obraCodigo: 'U12', codigo: 'NC-001', vistoriaId: 1, itemId: 205, itemNumero: '2.2', titulo: 'Juntas uniformes e alinhadas',
+    servico: 'Revestimento Cerâmico', ambiente: 'Cozinha · Térreo', severidade: 'Baixa', responsavel: 'Carlos Menezes',
+    descricao: 'Juntas com largura irregular na parede da pia.', solucao: 'Refazer o alinhamento das 6 peças e rejuntar.',
+    status: 'fechada', abertaEm: '2026-09-29', fechadaEm: '2026-10-01', fotos: [fotoQ('#E1371E', 'Junta irregular')],
+    timeline: [
+      { em: '29/09/2026 14:18', texto: 'Aberta por Ana Souza' },
+      { em: '29/09/2026 16:02', texto: 'Encaminhada para Carlos Menezes por Ana Souza' },
+      { em: '30/09/2026 17:40', texto: 'Marcada como corrigida por Carlos Menezes' },
+      { em: '01/10/2026 09:15', texto: 'Aprovada e fechada por Ana Souza' },
+    ] }),
+  ncMock({ id: 2, obraCodigo: 'U12', codigo: 'NC-002', vistoriaId: 1, itemId: 206, itemNumero: '2.3', titulo: 'Ausência de peças ocas (teste de percussão)',
+    servico: 'Revestimento Cerâmico', ambiente: 'Cozinha · Térreo', severidade: 'Alta', responsavel: 'Carlos Menezes',
+    descricao: 'Som oco em 4 peças do piso, perto da porta.', solucao: 'Remover as peças, recolar com colagem dupla e repetir o teste.',
+    status: 'corrigida', abertaEm: '2026-09-29', fotos: [fotoQ('#C92D16', 'Peças ocas')],
+    timeline: [
+      { em: '29/09/2026 14:20', texto: 'Aberta por Ana Souza' },
+      { em: '29/09/2026 16:05', texto: 'Encaminhada para Carlos Menezes por Ana Souza' },
+      { em: '03/10/2026 11:30', texto: 'Marcada como corrigida por Carlos Menezes' },
+    ] }),
+  ncMock({ id: 3, obraCodigo: 'U12', codigo: 'NC-003', vistoriaId: 2, itemId: 103, itemNumero: '1.3', titulo: 'Cantos e arestas arredondados (meia-cana executada)',
+    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Banheiro Social · Térreo', severidade: 'Média', responsavel: 'Juliana Prado',
+    descricao: 'Meia-cana não executada no encontro da parede com o box.', solucao: 'Executar a meia-cana com argamassa polimérica antes da manta.',
+    status: 'aberta', abertaEm: '2026-10-02', fotos: [fotoQ('#5B5754', 'Sem meia-cana')],
+    timeline: [{ em: '02/10/2026 10:45', texto: 'Aberta por Ricardo Lopes' }] }),
+  ncMock({ id: 4, obraCodigo: 'U12', codigo: 'NC-004', vistoriaId: 2, itemId: 105, itemNumero: '2.2', titulo: 'Número de demãos conforme o projeto',
+    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Banheiro Social · Térreo', severidade: 'Alta', responsavel: 'Juliana Prado',
+    descricao: 'Só 2 demãos aplicadas; o projeto pede 3.', solucao: 'Aplicar a terceira demão cruzada e aguardar a cura.',
+    status: 'encaminhada', abertaEm: '2026-10-02', fotos: [],
+    timeline: [
+      { em: '02/10/2026 10:50', texto: 'Aberta por Ricardo Lopes' },
+      { em: '02/10/2026 11:10', texto: 'Encaminhada para Juliana Prado por Ricardo Lopes' },
+    ] }),
+  ncMock({ id: 5, obraCodigo: 'T405', codigo: 'NC-001', vistoriaId: 3, itemId: 102, itemNumero: '1.2', titulo: 'Caimento do contrapiso em direção ao ralo conferido',
+    servico: 'Impermeabilização — Áreas Molhadas', ambiente: 'Piso do tanque · Anel 1', severidade: 'Média', responsavel: 'Rafael Lima',
+    descricao: 'Caimento invertido em um trecho de 2 m.', solucao: 'Regularizar o trecho com argamassa de nivelamento.',
+    status: 'aberta', abertaEm: '2026-10-03', fotos: [],
+    timeline: [{ em: '03/10/2026 15:20', texto: 'Aberta por Rafael Lima' }] }),
+]
+
+// QUALIDADE — Gemba Walk (caça aos desperdícios). "Hoje" no exemplo = 2026-10-04.
+const gb = (o) => ({ foto: '', prazo: '', ...o })
+export const gembaDeExemplo = [
+  gb({ id: 1, obraCodigo: 'U12', local: 'Rack 3 · Linha L-340', descricao: 'Spool 14 soldado fora da tolerância e cortado de novo duas vezes.',
+    causaRaiz: 'Desenho de fabricação desatualizado na bancada.', acao: 'Conferir a revisão do desenho antes de cada corte e fixar a lista de revisões na bancada.',
+    desperdicios: ['Retrabalho'], prazo: '2026-10-02', responsavel: 'Carlos Menezes', status: 'pendente', foto: fotoQ('#C92D16', 'Spool 14 refeito') }),
+  gb({ id: 2, obraCodigo: 'U12', local: 'Forno F-101', descricao: 'Equipe parada esperando a permissão de trabalho da operação.',
+    causaRaiz: 'Permissão só é emitida às 11h, sem pedido antecipado.', acao: 'Pedir a permissão na véspera, no fim do turno.',
+    desperdicios: ['Espera'], prazo: '2026-10-06', responsavel: 'Juliana Prado', status: 'em_andamento', foto: fotoQ('#E1371E', 'Espera F-101') }),
+  gb({ id: 3, obraCodigo: 'U12', local: 'Canteiro · almoxarifado', descricao: 'Tubos levados três vezes entre o almoxarifado e a área de pré-montagem.',
+    causaRaiz: 'Área de pré-montagem longe do estoque.', acao: 'Mover a bancada de pré-montagem para perto do almoxarifado.',
+    desperdicios: ['Transporte', 'Movimentação'], prazo: '2026-10-09', responsavel: 'Ricardo Lopes', status: 'pendente', foto: fotoQ('#3A3735', 'Tubos em trânsito') }),
+  gb({ id: 4, obraCodigo: 'U12', local: 'Pátio de pintura', descricao: 'Latas de tinta acumuladas além do consumo de duas semanas.',
+    causaRaiz: 'Compra em lote grande para ganhar desconto.', acao: 'Ajustar o pedido ao consumo semanal.',
+    desperdicios: ['Estoque', 'Superprodução'], prazo: '', responsavel: 'Juliana Prado', status: 'pendente' }),
+  gb({ id: 5, obraCodigo: 'U12', local: 'Painel PC-12', descricao: 'Mesma folha de inspeção preenchida à mão e depois digitada de novo.',
+    causaRaiz: 'Não existe formulário digital no celular.', acao: 'Usar o checklist do app direto no campo.',
+    desperdicios: ['Processo desnecessário', 'Retrabalho'], prazo: '2026-10-08', responsavel: 'Ana Souza', status: 'em_andamento' }),
+  gb({ id: 6, obraCodigo: 'U12', local: 'Rack 1', descricao: 'Isolamento refeito por falta de proteção contra chuva no trecho.',
+    causaRaiz: 'Lona de proteção não foi pedida na programação semanal.', acao: 'Incluir proteção contra chuva na programação de curto prazo.',
+    desperdicios: ['Retrabalho'], prazo: '2026-10-01', responsavel: 'Ricardo Lopes', status: 'resolvido', foto: fotoQ('#2E8B57', 'Lona instalada') }),
+  gb({ id: 7, obraCodigo: 'U12', local: 'Casa de bombas', descricao: 'Soldador volta ao contêiner três vezes por turno buscar ferramenta.',
+    causaRaiz: 'Kit de ferramentas incompleto na frente.', acao: 'Montar um kit padrão por frente de solda.',
+    desperdicios: ['Movimentação', 'Espera'], prazo: '2026-10-04', responsavel: 'Carlos Menezes', status: 'pendente' }),
+  gb({ id: 8, obraCodigo: 'T405', local: 'Costado T-405', descricao: 'Chapas empilhadas esperando o guindaste, que atende outra frente.',
+    causaRaiz: 'Um único guindaste para duas frentes.', acao: 'Escalonar o uso do guindaste por horário.',
+    desperdicios: ['Espera'], prazo: '2026-10-07', responsavel: 'Rafael Lima', status: 'pendente', foto: fotoQ('#5B5754', 'Chapas paradas') }),
+  gb({ id: 9, obraCodigo: 'T405', local: 'Fundo do tanque', descricao: 'Solda de junta repetida por ensaio reprovado.',
+    causaRaiz: 'Soldador sem requalificação para a posição.', acao: 'Requalificar o soldador antes da próxima junta.',
+    desperdicios: ['Retrabalho'], prazo: '', responsavel: 'Rafael Lima', status: 'em_andamento' }),
+]
