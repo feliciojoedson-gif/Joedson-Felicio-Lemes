@@ -118,7 +118,11 @@ const PAPEIS = {
   },
   // Pendente: conta nova que ainda não foi liberada. Não lê dado nenhum e não se aprova.
   pendente: { nome: 'conta pendente', ler: [], inserir: [], alterar: [], apagar: [] },
+  // Cliente: só consulta, e só o recorte das views (frentes sem responsável/impacto, medição Aprovada) e das fotos liberadas.
+  cliente: { nome: 'cliente', ler: ['obras', 'obra_membros', 'fotos', 'frentes_cliente', 'medicoes_cliente'], inserir: [], alterar: [], apagar: [] },
 }
+// Colunas que o Cliente nunca pode receber da view de frentes (PRD: sem responsável, dias sem avanço, impacto, data de decisão).
+const COLUNAS_PROIBIDAS_AO_CLIENTE = ['responsavel_id', 'dias_sem_avanco', 'impacto_prazo_dias', 'data_limite_decisao', 'ultimo_avanco_em', 'status', 'saude', 'created_by']
 
 async function intrusoLogado(papel, email, senha, ctx) {
   const cfg = PAPEIS[papel]
@@ -151,6 +155,22 @@ async function intrusoLogado(papel, email, senha, ctx) {
     if (deOutraObra.length) linha('aberta', quem, t, 'LER', `vazou ${deOutraObra.length} linha(s) de OUTRA obra`)
     else if (t === 'obras' && linhas.some((o) => o.id !== ctx.obra)) linha('aberta', quem, t, 'LER', 'viu obras que não são dele')
     else linha(linhas.length ? 'permitida' : 'fechada', quem, t, 'LER', linhas.length ? `${linhas.length} linha(s) da obra liberada` : 'sem linhas')
+  }
+
+  // --- Recorte do Cliente: o que a leitura PERMITIDA devolve tem que respeitar o recorte ---
+  if (papel === 'cliente') {
+    const fotos = await sb.from('fotos').select('*')
+    const escondidas = (fotos.data || []).filter((f) => !f.visivel_cliente)
+    linha(escondidas.length ? 'aberta' : 'fechada', quem, 'fotos', 'LER só as liberadas', escondidas.length ? `viu ${escondidas.length} foto(s) NÃO liberada(s)` : `só fotos liberadas (${fotos.data?.length ?? 0})`)
+    const meds = await sb.from('medicoes_cliente').select('*')
+    const naoAprovadas = (meds.data || []).filter((m) => m.status !== 'Aprovada')
+    linha(naoAprovadas.length ? 'aberta' : 'fechada', quem, 'medicoes_cliente', 'LER só as Aprovadas', naoAprovadas.length ? `viu ${naoAprovadas.length} medição(ões) não aprovada(s)` : `só Aprovadas (${meds.data?.length ?? 0})`)
+    const fr = await sb.from('frentes_cliente').select('*').limit(5)
+    const colunas = Object.keys(fr.data?.[0] || {})
+    const vazadas = colunas.filter((c) => COLUNAS_PROIBIDAS_AO_CLIENTE.includes(c))
+    linha(vazadas.length ? 'aberta' : 'fechada', quem, 'frentes_cliente', 'LER colunas proibidas', vazadas.length ? `expõe: ${vazadas.join(', ')}` : 'sem coluna proibida')
+    const colegas = await sb.from('perfis_colegas').select('*').limit(5)
+    linha(colegas.data?.length ? 'aberta' : 'fechada', quem, 'perfis_colegas', 'LER', colegas.data?.length ? `viu ${colegas.data.length} colega(s)` : 'o banco devolveu 0 linhas')
   }
 
   // --- INSERIR (linhas válidas na obra de teste: se a porta estiver aberta, ela passa) ---

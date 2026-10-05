@@ -58,11 +58,13 @@ Os usuários de teste e a obra `ZZAUD` foram **apagados do banco às 10:56 UTC p
 | Usuário **comum (Produção)**, logado | 164 | 42 | **0** | 1 |
 | Conta **pendente**, logada | 204 | 2 | **0** | 1 |
 
+Depois, o papel **Cliente** (`TESTE_PAPEL=cliente`, com checagens próprias do recorte): 203 🔒 · 7 🟢 · **0 🚨** · 1 ❓ (o mesmo do boletim). Com 2 fotos (1 liberada) e 2 medições (1 Aprovada) na obra de teste, o Cliente viu **só 1 foto e só a medição Aprovada**; a view `frentes_cliente` não expôs responsável, dias sem avanço, impacto, data de decisão, status nem saúde; `perfis_colegas` devolveu 0 linhas; nada foi inserido, alterado nem apagado.
+
 O ❓ de cada papel é o mesmo: `boletins_empreiteiro | INSERIR`. O gatilho do banco recusa antes ("só contrato Aprovado/Ativo recebe medição"), então o teste não chega a checar a permissão. É limite do dado de teste (o banco não deixa criar um contrato Ativo por atalho), não furo: a policy `boletins_empreiteiro_criar` só aceita Coordenador, Planejamento e Medição. A obra `ZZAUD`, as contas `zzaud-*` e todos os dados de teste foram **apagados em seguida** (conferido: 0 restos; as 3 obras reais e o Coordenador ativo intactos).
 
 ## Pendências
 
-- Só dois papéis têm teste logado (Produção e Pendente). Cliente, Engenharia, Planejamento, Diretoria etc. ainda não: exigem ensinar o script o que cada um pode.
+- Têm teste logado: Produção, Pendente e Cliente. Engenharia, Planejamento, Diretoria, Medição, Gestão Contratual, Custos e Controle e Administrador ainda não: exigem ensinar o script o que cada um pode (`PAPEIS` em `teste-do-estranho.mjs`).
 - Proteção contra senha vazada (plano Pro).
 - O **teste logado** precisa de uma obra e usuários de teste descartáveis (o script lê `TESTE_PAPEL`, `TESTE_EMAIL`, `TESTE_SENHA` e `TESTE_CTX`, e o contexto de linhas de teste). O teste **sem login** roda sozinho: `node teste-do-estranho.mjs`.
 
