@@ -50,8 +50,19 @@ A primeira versão do script mostrou 16 "🚨" que eram **falsos alarmes**: o ba
 
 Os usuários de teste e a obra `ZZAUD` foram **apagados do banco às 10:56 UTC por alguém com acesso direto** (a auditoria mostra ação sem usuário do app), antes de a minha limpeza acontecer. Conferido depois: **não sobrou nada de teste** (nenhum usuário, obra, catálogo, modelo ou arquivo `ZZ`). Isso não indica invasão; as tabelas de obras nem têm permissão de apagar pelo app.
 
+## Nova rodada (05/10/2026, depois das migrations `modulos_por_usuario_e_autor` e `autor_nao_muda`)
+
+| Intruso | 🔒 fechadas | 🟢 permitidas pelo papel | 🚨 abertas | ❓ inconclusivas |
+|---|---|---|---|---|
+| Estranho **sem login** | 106 | 0 | **0** | 0 |
+| Usuário **comum (Produção)**, logado | 164 | 42 | **0** | 1 |
+| Conta **pendente**, logada | 204 | 2 | **0** | 1 |
+
+O ❓ de cada papel é o mesmo: `boletins_empreiteiro | INSERIR`. O gatilho do banco recusa antes ("só contrato Aprovado/Ativo recebe medição"), então o teste não chega a checar a permissão. É limite do dado de teste (o banco não deixa criar um contrato Ativo por atalho), não furo: a policy `boletins_empreiteiro_criar` só aceita Coordenador, Planejamento e Medição. A obra `ZZAUD`, as contas `zzaud-*` e todos os dados de teste foram **apagados em seguida** (conferido: 0 restos; as 3 obras reais e o Coordenador ativo intactos).
+
 ## Pendências
 
+- Só dois papéis têm teste logado (Produção e Pendente). Cliente, Engenharia, Planejamento, Diretoria etc. ainda não: exigem ensinar o script o que cada um pode.
 - Proteção contra senha vazada (plano Pro).
 - O **teste logado** precisa de uma obra e usuários de teste descartáveis (o script lê `TESTE_PAPEL`, `TESTE_EMAIL`, `TESTE_SENHA` e `TESTE_CTX`, e o contexto de linhas de teste). O teste **sem login** roda sozinho: `node teste-do-estranho.mjs`.
 
